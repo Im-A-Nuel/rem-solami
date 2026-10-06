@@ -58,6 +58,46 @@ export function StatusBadge({ status, size = "md" }: { status: AgentStatus; size
   );
 }
 
+/**
+ * Placeholder identity for an agent: a small node graph whose shape comes from its name, with the
+ * status as a badge dot. Stands in for a logo until the owner supplies one.
+ */
+export function AgentGlyph({ name, status }: { name: string; status: AgentStatus }) {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
+  const rnd = () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  const pts = Array.from({ length: 5 }, (_, i) => {
+    const a = (i / 5) * Math.PI * 2 + rnd() * 0.9;
+    const r = 11 + rnd() * 7;
+    return [Math.round((22 + Math.cos(a) * r) * 10) / 10, Math.round((22 + Math.sin(a) * r) * 10) / 10] as const;
+  });
+  return (
+    <span className="relative inline-flex size-12 shrink-0">
+      <svg viewBox="0 0 44 44" className="size-12 rounded-full border border-line-strong bg-bg" fill="none" aria-hidden="true">
+        <g stroke="var(--muted)" strokeWidth="0.9" opacity="0.7">
+          {pts.map(([x, y], i) => (
+            <path key={i} d={`M22 22L${x} ${y}`} />
+          ))}
+        </g>
+        <g fill="var(--text)" opacity="0.85">
+          {pts.map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="1.7" />
+          ))}
+        </g>
+        <circle cx="22" cy="22" r="3.4" fill="var(--accent)" />
+      </svg>
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-bg"
+        style={{ background: statusColor[status] }}
+      />
+    </span>
+  );
+}
+
 export function IncidentStatusBadge({ status }: { status: IncidentStatus }) {
   const map: Record<IncidentStatus, { color: string; text: string }> = {
     alerted: { color: "var(--warn)", text: "Alerted" },

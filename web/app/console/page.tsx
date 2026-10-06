@@ -3,20 +3,17 @@
 import Link from "next/link";
 import { getAgents } from "@/lib/api";
 import { formatUnits, shorten } from "@/lib/format";
-import { needsAttention, nextStep, overview, statusOrder } from "@/lib/status";
+import { needsAttention, nextStep, nonceText, overview, statusOrder } from "@/lib/status";
 import type { Agent } from "@/lib/types";
 import {
+  AgentGlyph,
   Async,
-  Command,
   EmptyState,
-  ModeTag,
   PageHead,
   StatusBadge,
   statusColor,
   useResource,
 } from "@/components/console/ui";
-
-const COLS = "md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)_1.25rem]";
 
 function Legend() {
   return (
@@ -56,65 +53,66 @@ function Legend() {
   );
 }
 
-function AgentRow({ agent }: { agent: Agent }) {
+function AgentCard({ agent }: { agent: Agent }) {
   const step = nextStep(agent);
+  const nonce = nonceText(agent);
   const attention = needsAttention(agent);
+  const color = statusColor[agent.status];
   return (
-    <li className="group relative border-t border-line transition-colors hover:bg-surface/60">
-      <div className={`grid grid-cols-2 items-center gap-x-6 gap-y-3 px-1 py-5 ${COLS}`}>
-        <div className="col-span-2 min-w-0 md:col-span-1">
-          <Link
-            href={`/console/agents/${encodeURIComponent(agent.name)}`}
-            className="display block truncate text-[1.3rem] transition-colors after:absolute after:inset-0 group-hover:text-accent"
-          >
-            {agent.name}
-          </Link>
-          <span className="mono text-[0.72rem] text-muted">{shorten(agent.agentWallet, 10, 6)}</span>
+    <li
+      className="rule-card group relative flex flex-col rounded-[0.9rem] p-5 transition-colors hover:border-line-strong"
+      style={attention ? { borderColor: `color-mix(in srgb, ${color} 45%, transparent)` } : undefined}
+    >
+      <div className="flex items-start gap-3.5">
+        <AgentGlyph name={agent.name} status={agent.status} />
+        <div className="min-w-0 flex-1">
+          <h3 className="display truncate text-[1.2rem]">
+            <Link
+              href={`/console/agents/${encodeURIComponent(agent.name)}`}
+              className="transition-colors after:absolute after:inset-0 after:rounded-[0.9rem] group-hover:text-accent"
+            >
+              {agent.name}
+            </Link>
+          </h3>
+          <p className="mono mt-0.5 text-[0.72rem] text-muted">{shorten(agent.agentWallet, 8, 6)}</p>
         </div>
-
-        <div>
-          <span className="label mb-1 block md:hidden">Status</span>
-          <StatusBadge status={agent.status} />
-          <p className="mt-0.5 text-[0.76rem] text-muted">{step.headline}</p>
-        </div>
-
-        <div>
-          <span className="label mb-1 block md:hidden">Mode</span>
-          <ModeTag mode={agent.mode} />
-        </div>
-
-        <div className="col-span-2 flex items-baseline gap-3 md:col-span-1 md:block md:text-right">
-          <span className="label block md:hidden">Allowance left</span>
-          <span className="mono text-[0.95rem] text-text">{formatUnits(agent.allowanceRemaining)}</span>
-          <span className="mono ml-1.5 text-[0.72rem] text-muted">USDC</span>
-        </div>
-
-        <span aria-hidden="true" className="hidden justify-self-end text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-text md:block">
-          ›
-        </span>
+        <StatusBadge status={agent.status} />
       </div>
 
-      {attention && (
-        <div className="relative z-10 px-1 pb-5">
-          <p className="max-w-3xl text-[0.85rem] leading-6 text-text">
-            <span className="mono mr-2 text-[0.7rem]" style={{ color: statusColor[agent.status] }}>
-              NEXT STEP
-            </span>
-            {step.detail}
+      <div className="mt-5">
+        <p className="text-[0.95rem] text-text">{step.headline}</p>
+        <p className="mt-1 text-[0.8rem] leading-5 text-muted">{step.short}</p>
+      </div>
+
+      <ul className="mb-6 mt-4 flex flex-wrap gap-2" aria-label="Agent settings">
+        <li
+          className={`mono rounded-full border px-2.5 py-1 text-[0.66rem] ${
+            agent.mode === "brake" ? "border-accent/40 text-accent" : "border-line-strong text-muted"
+          }`}
+        >
+          {agent.mode === "brake" ? "brake mode" : "alert mode"}
+        </li>
+        <li
+          className={`mono rounded-full border px-2.5 py-1 text-[0.66rem] ${
+            nonce.warn ? "border-warn/50 text-warn" : "border-line-strong text-muted"
+          }`}
+        >
+          {nonce.warn ? "nonce changed" : agent.status === "tripped" ? "nonce used" : "nonce ok"}
+        </li>
+      </ul>
+
+      <div className="mt-auto flex items-end justify-between gap-4 border-t border-line pt-4">
+        <div>
+          <p className="label">Allowance left</p>
+          <p className="mt-1 text-text">
+            <span className="mono text-[1.35rem]">{formatUnits(agent.allowanceRemaining)}</span>
+            <span className="mono ml-1.5 text-[0.72rem] text-muted">USDC</span>
           </p>
-          {step.command && (
-            <details className="group mt-1">
-              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-[0.8rem] text-muted transition-colors hover:text-text">
-                <span aria-hidden="true" className="text-[0.7rem] transition-transform group-open:rotate-90">
-                  ▸
-                </span>
-                Show the command
-              </summary>
-              <Command text={step.command} />
-            </details>
-          )}
         </div>
-      )}
+        <span aria-hidden="true" className="btn transition-colors group-hover:border-line-strong group-hover:bg-text/[0.04]">
+          {attention ? "Fix this agent" : "View agent"}
+        </span>
+      </div>
     </li>
   );
 }
@@ -164,19 +162,9 @@ export default function AgentsPage() {
 
               <Legend />
 
-              <div
-                aria-hidden="true"
-                className={`label hidden gap-x-6 border-t border-line px-1 py-3 md:grid ${COLS}`}
-              >
-                <span>Agent</span>
-                <span>Status</span>
-                <span>Mode</span>
-                <span className="text-right">Allowance left</span>
-                <span />
-              </div>
-              <ul className="border-b border-line">
+              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {sorted.map((a) => (
-                  <AgentRow key={a.name} agent={a} />
+                  <AgentCard key={a.name} agent={a} />
                 ))}
               </ul>
             </>

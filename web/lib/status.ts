@@ -9,6 +9,8 @@ export const needsAttention = (a: Agent) => a.status === "stale" || a.status ===
 
 export interface NextStep {
   headline: string;
+  /** One line for cards and lists. */
+  short: string;
   detail: string;
   command?: string;
 }
@@ -18,6 +20,7 @@ export function nextStep(a: Agent): NextStep {
     case "stale":
       return {
         headline: "Needs re-signing",
+        short: "The nonce changed. Re-sign to protect it again.",
         detail:
           "The nonce changed, so the saved panic transaction would fail if it were sent. Re-sign it on the owner's machine to protect this agent again.",
         command: "rem setup --refresh --owner <keypair> --agent-file <file>",
@@ -25,6 +28,7 @@ export function nextStep(a: Agent): NextStep {
     case "tripped":
       return {
         headline: "Stopped by Rem",
+        short: "The agent can no longer spend. Approve and sign again to resume.",
         detail:
           "The panic transaction landed and cleared the agent's delegate, so it cannot spend. To resume, approve a new allowance and sign a fresh panic transaction on the owner's machine.",
         command:
@@ -34,15 +38,17 @@ export function nextStep(a: Agent): NextStep {
       return a.mode === "brake"
         ? {
             headline: "Protected",
+            short: "Rem sends the revoke if a rule breaks.",
             detail: "Rem sends the panic transaction the moment a rule breaks.",
           }
         : {
             headline: "Watching, alert only",
+            short: "Rem alerts you if a rule breaks. Nothing is revoked.",
             detail:
               "Rem notifies you when a rule breaks but does not send the panic transaction. Set the agent to brake mode in rem.yaml to enforce.",
           };
     case "disarmed":
-      return { headline: "Not enforcing", detail: "Rem is not acting on this agent." };
+      return { headline: "Not enforcing", short: "Rem is not acting on this agent.", detail: "Rem is not acting on this agent." };
   }
 }
 
