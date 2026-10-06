@@ -31,22 +31,29 @@ export function useResource<T>(load: () => Promise<T>, key: string): [Resource<T
   return [state, retry];
 }
 
-const statusStyle: Record<AgentStatus, { color: string; text: string; hint: string }> = {
-  armed: { color: "var(--accent)", text: "Armed", hint: "Watching, panic tx ready" },
-  stale: { color: "var(--warn)", text: "Stale", hint: "Nonce changed, owner must re-sign" },
-  tripped: { color: "var(--danger)", text: "Tripped", hint: "Revoke sent, agent stopped" },
-  disarmed: { color: "var(--muted)", text: "Disarmed", hint: "Not enforcing" },
+export const statusColor: Record<AgentStatus, string> = {
+  armed: "var(--accent)",
+  stale: "var(--warn)",
+  tripped: "var(--danger)",
+  disarmed: "var(--muted)",
 };
 
-export function StatusBadge({ status, showHint = false }: { status: AgentStatus; showHint?: boolean }) {
-  const s = statusStyle[status];
+const statusText: Record<AgentStatus, string> = {
+  armed: "Armed",
+  stale: "Stale",
+  tripped: "Tripped",
+  disarmed: "Disarmed",
+};
+
+export function StatusBadge({ status, size = "md" }: { status: AgentStatus; size?: "md" | "lg" }) {
   return (
-    <span className="inline-flex flex-col">
-      <span className="inline-flex items-center gap-2 text-[0.85rem] font-normal text-text">
-        <span aria-hidden="true" className="size-2 rounded-full" style={{ background: s.color }} />
-        {s.text}
-      </span>
-      {showHint && <span className="mt-0.5 text-[0.74rem] text-muted">{s.hint}</span>}
+    <span className={`inline-flex items-center gap-2 text-text ${size === "lg" ? "text-[1.05rem]" : "text-[0.88rem]"}`}>
+      <span
+        aria-hidden="true"
+        className={`rounded-full ${size === "lg" ? "size-2.5" : "size-2"}`}
+        style={{ background: statusColor[status] }}
+      />
+      {statusText[status]}
     </span>
   );
 }
@@ -71,33 +78,40 @@ export function ModeTag({ mode }: { mode: AgentMode }) {
   return (
     <span className="inline-flex flex-col">
       <span className="mono text-[0.82rem] text-text">{mode}</span>
-      <span className="mt-0.5 text-[0.74rem] text-muted">
-        {mode === "brake" ? "Sends the panic tx" : "Alerts only"}
-      </span>
+      <span className="mt-0.5 text-[0.74rem] text-muted">{mode === "brake" ? "sends the revoke" : "alerts only"}</span>
     </span>
   );
 }
 
-export function Sig({ value, kind = "tx" }: { value: string; kind?: "tx" | "address" }) {
+function useCopy() {
   const [copied, setCopied] = useState(false);
-  const real = !value.startsWith("SAMPLE-") && !usingSamples;
-  const href = real ? `https://solscan.io/${kind === "tx" ? "tx" : "account"}/${value}` : null;
-  const short = value.length > 22 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value;
-
-  const copy = async () => {
+  const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {
-      /* clipboard unavailable, value stays selectable */
+      /* clipboard unavailable, the text stays selectable */
     }
   };
+  return { copied, copy };
+}
+
+export function Sig({ value, kind = "tx" }: { value: string; kind?: "tx" | "address" }) {
+  const { copied, copy } = useCopy();
+  const real = !value.startsWith("SAMPLE-") && !usingSamples;
+  const href = real ? `https://solscan.io/${kind === "tx" ? "tx" : "account"}/${value}` : null;
+  const short = value.length > 22 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value;
 
   return (
     <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
       {href ? (
-        <a href={href} target="_blank" rel="noreferrer" className="mono break-all text-[0.8rem] text-text underline decoration-line-strong underline-offset-4 hover:decoration-accent">
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="mono break-all text-[0.8rem] text-text underline decoration-line-strong underline-offset-4 hover:decoration-accent"
+        >
           {short}
         </a>
       ) : (
@@ -107,7 +121,7 @@ export function Sig({ value, kind = "tx" }: { value: string; kind?: "tx" | "addr
       )}
       <button
         type="button"
-        onClick={copy}
+        onClick={() => copy(value)}
         className="min-h-8 px-1 text-[0.72rem] tracking-wide text-muted hover:text-text"
         aria-label={`Copy ${value}`}
       >
@@ -117,11 +131,52 @@ export function Sig({ value, kind = "tx" }: { value: string; kind?: "tx" | "addr
   );
 }
 
-export function PageHead({ title, lead }: { title: string; lead?: ReactNode }) {
+/** A shell command the operator should run, with the copy button next to it. */
+export function Command({ text, label = "Run on the owner's machine" }: { text: string; label?: string }) {
+  const { copied, copy } = useCopy();
   return (
-    <header className="mb-10">
-      <h1 className="display text-[clamp(2rem,4vw,3rem)]">{title}</h1>
-      {lead && <p className="mt-3 max-w-2xl text-[0.92rem] leading-7 text-muted">{lead}</p>}
+    <div className="mt-4 border border-line bg-bg/60">
+      <p className="label border-b border-line px-3 py-2">{label}</p>
+      <div className="flex items-start justify-between gap-3 px-3 py-3">
+        <code className="mono break-words text-[0.78rem] leading-6 text-text">{text}</code>
+        <button
+          type="button"
+          onClick={() => copy(text)}
+          className="min-h-8 shrink-0 px-1 text-[0.72rem] tracking-wide text-muted hover:text-text"
+          aria-label="Copy command"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <p className="border-t border-line px-3 py-2 text-[0.72rem] text-muted">
+        Replace the <span className="mono">&lt;placeholders&gt;</span> with your own values.
+      </p>
+    </div>
+  );
+}
+
+export function PageHead({
+  title,
+  lead,
+  onRefresh,
+  busy,
+}: {
+  title: string;
+  lead?: ReactNode;
+  onRefresh?: () => void;
+  busy?: boolean;
+}) {
+  return (
+    <header className="mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+      <div>
+        <h1 className="display text-[clamp(1.8rem,3.4vw,2.5rem)]">{title}</h1>
+        {lead && <p className="mt-2 max-w-xl text-[0.88rem] leading-6 text-muted">{lead}</p>}
+      </div>
+      {onRefresh && (
+        <button type="button" onClick={onRefresh} disabled={busy} className="btn disabled:opacity-50">
+          {busy ? "Refreshing" : "Refresh"}
+        </button>
+      )}
     </header>
   );
 }
@@ -138,13 +193,26 @@ export function Panel({ title, children, aside }: { title: string; children: Rea
   );
 }
 
+export function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[7.5rem_1fr] items-baseline gap-x-4 border-t border-line py-3 first:border-t-0 first:pt-0">
+      <dt className="label">{label}</dt>
+      <dd className="text-[0.88rem] text-text">{children}</dd>
+    </div>
+  );
+}
+
 export function LoadingState({ what }: { what: string }) {
   return (
     <div role="status" aria-live="polite" className="py-6">
       <p className="text-[0.88rem] text-muted">Loading {what}…</p>
       <div aria-hidden="true" className="mt-5 space-y-px">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 animate-pulse border-t border-line bg-surface/60" style={{ animationDelay: `${i * 120}ms` }} />
+          <div
+            key={i}
+            className="h-16 animate-pulse border-t border-line bg-surface/60"
+            style={{ animationDelay: `${i * 120}ms` }}
+          />
         ))}
       </div>
     </div>
