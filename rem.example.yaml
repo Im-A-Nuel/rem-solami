@@ -1,0 +1,35 @@
+solami:
+  grpc_endpoint: ${SOLAMI_GRPC_ENDPOINT}
+  grpc_token: ${SOLAMI_GRPC_TOKEN}
+  rpc_url: ${SOLAMI_RPC_URL}
+  beam_url: ${SOLAMI_BEAM_URL}
+  mirage_ws: ${SOLAMI_MIRAGE_WS}
+
+fallback_rpc_url: ${FALLBACK_RPC_URL}
+fee_payer_keypair: ${REM_FEE_PAYER_KEYPAIR}
+db_path: ${REM_DB_PATH}
+api_addr: ${REM_API_ADDR}
+
+telegram:
+  bot_token: ${TELEGRAM_BOT_TOKEN}
+  chat_id: ${TELEGRAM_CHAT_ID}
+
+nonce_check_interval: 60s
+
+agents:
+  - name: demo-agent
+    agent_wallet: <AGENT_PUBKEY>
+    owner_wallet: <OWNER_PUBKEY>
+    token_accounts:
+      - <OWNER_USDC_ATA>
+    nonce_account: <NONCE_ACCOUNT_PUBKEY>
+    panic_tx_file: ./panic/demo-agent.json
+    mode: brake            # alert | brake
+    policy:
+      allow_destinations:
+        - <KNOWN_MERCHANT_OR_POOL>
+      max_out_per_minute: 2000000     # base units (2 USDC)
+      max_tx_per_10s: 3
+      allow_programs:
+        - TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA   # SPL Token
+        - ComputeBudget111111111111111111111111111111

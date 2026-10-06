@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+rem.yaml
+keys/
+panic/
+
+# local data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# build
+bin/
+*.exe
+
+# dashboard
+web/node_modules/
+web/.next/
+web/out/
+
+# editor / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
