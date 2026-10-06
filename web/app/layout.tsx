@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Hanken_Grotesk, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { Hanken_Grotesk, IBM_Plex_Mono, Sora } from "next/font/google";
 import "./globals.css";
 
-const display = Instrument_Serif({
+// Display: Sora, a wide geometric sans. Used thin so headlines read like the reference's light, spaced
+// lettering instead of editorial serif; one word per headline steps up in weight for emphasis.
+const display = Sora({
   subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });

@@ -26,12 +26,12 @@ function Hud() {
         aria-hidden="true"
         className="pointer-events-none fixed bottom-5 left-5 z-30 flex items-center gap-4 opacity-0 transition-opacity duration-300 sm:bottom-7 sm:left-10"
       >
-        <span className="mono text-[0.72rem] tracking-[0.14em] text-text">
+        <span className="mono text-[0.95rem] tracking-[0.12em] text-text">
           <span data-chap-num>01</span>
           <span className="text-muted"> / 05</span>
         </span>
-        <span className="h-px w-8 bg-line-strong" />
-        <span data-chap-name className="label" />
+        <span className="h-px w-10 bg-line-strong" />
+        <span data-chap-name className="label !text-[0.78rem]" />
       </div>
       <div
         aria-hidden="true"

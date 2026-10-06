@@ -81,7 +81,7 @@ export default function AgentsPage() {
                       className="group grid gap-x-6 gap-y-3 px-1 py-5 transition-colors hover:bg-surface/70 md:grid-cols-[minmax(0,1.5fr)_1fr_1fr_1.3fr_0.9fr] md:items-center"
                     >
                       <span>
-                        <span className="display block text-[1.7rem] group-hover:text-accent">{a.name}</span>
+                        <span className="display block text-[1.45rem] group-hover:text-accent">{a.name}</span>
                         <span className="mono text-[0.74rem] text-muted">{shorten(a.agentWallet, 10, 6)}</span>
                       </span>
                       <span>

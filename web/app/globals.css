@@ -69,13 +69,16 @@ html.lenis body {
 /* Type */
 .display {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  line-height: 0.98;
+  font-weight: 250;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+}
+.emph {
+  font-weight: 500;
 }
 
 .label {
-  font-size: 0.6875rem;
+  font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -171,6 +174,11 @@ html:is([data-motion="on"], [data-motion="lite"]) [data-wipe] {
   position: relative;
   width: 100%;
   min-height: 100svh;
+}
+/* Pinned scenes must fit one viewport. Everything is sized in rem, so scaling the root with the
+   viewport height keeps content inside the frame on short laptop screens. */
+html[data-motion="on"] {
+  font-size: clamp(12px, 2vh, 16px);
 }
 html[data-motion="on"] .stage {
   position: relative;

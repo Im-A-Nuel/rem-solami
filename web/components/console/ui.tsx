@@ -120,7 +120,7 @@ export function Sig({ value, kind = "tx" }: { value: string; kind?: "tx" | "addr
 export function PageHead({ title, lead }: { title: string; lead?: ReactNode }) {
   return (
     <header className="mb-10">
-      <h1 className="display text-[clamp(2.4rem,5vw,3.6rem)]">{title}</h1>
+      <h1 className="display text-[clamp(2rem,4vw,3rem)]">{title}</h1>
       {lead && <p className="mt-3 max-w-2xl text-[0.92rem] leading-7 text-muted">{lead}</p>}
     </header>
   );

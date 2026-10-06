@@ -38,7 +38,7 @@ export default function AgentPage() {
             <>
               <header className="mb-12 mt-4 flex flex-wrap items-end justify-between gap-6">
                 <div>
-                  <h1 className="display text-[clamp(2.6rem,6vw,4.4rem)]">{agent.name}</h1>
+                  <h1 className="display text-[clamp(2.1rem,5vw,3.4rem)]">{agent.name}</h1>
                   <p className="mt-3">
                     <Sig value={agent.agentWallet} kind="address" />
                   </p>

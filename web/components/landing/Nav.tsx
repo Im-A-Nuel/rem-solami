@@ -100,7 +100,7 @@ export default function Nav() {
               ref={i === 0 ? firstLink : undefined}
               href={l.href}
               onClick={() => setOpen(false)}
-              className="display py-2 text-5xl"
+              className="display py-2 text-4xl"
             >
               {l.label}
             </a>

@@ -2,7 +2,7 @@ import { Fragment } from "react";
 
 /**
  * Splits a headline into words so the scroll engine can reveal them one by one.
- * Wrap a word in asterisks for a serif italic emphasis: "before its *next* transaction."
+ * Wrap a word in asterisks for a heavier-weight emphasis: "before its *next* transaction."
  * Punctuation after the closing asterisk stays upright.
  */
 export function Words({ text }: { text: string }) {
@@ -17,7 +17,7 @@ export function Words({ text }: { text: string }) {
               <span className="word">
                 {m ? (
                   <>
-                    <span className="italic">{m[1]}</span>
+                    <span className="emph">{m[1]}</span>
                     {m[2]}
                   </>
                 ) : (

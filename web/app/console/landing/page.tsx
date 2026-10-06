@@ -18,13 +18,13 @@ function Route({ name, s, color }: { name: string; s: RouteStats; color: string 
       <dl className="grid grid-cols-2 gap-x-8 gap-y-4">
         <div>
           <dt className="label">p50</dt>
-          <dd className="display mt-1 text-[2.4rem]">
+          <dd className="display mt-1 text-[2.2rem]">
             {s.p50Ms} <span className="mono text-[0.78rem] text-muted">ms</span>
           </dd>
         </div>
         <div>
           <dt className="label">p95</dt>
-          <dd className="display mt-1 text-[2.4rem]">
+          <dd className="display mt-1 text-[2.2rem]">
             {s.p95Ms} <span className="mono text-[0.78rem] text-muted">ms</span>
           </dd>
         </div>

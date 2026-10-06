@@ -1,9 +1,10 @@
 import Link from "next/link";
+import ThreatVisual, { type ThreatKind } from "./ThreatVisual";
 import { Words } from "./Words";
 
 const REPO = "https://github.com/Im-A-Nuel/rem-solami";
 
-const h2 = "display text-[clamp(2.2rem,min(5.4vw,9.2vh),4.9rem)]";
+const h2 = "display text-[clamp(1.9rem,min(4.3vw,7.6vh),3.9rem)]";
 const body = "text-[0.95rem] leading-7 text-muted";
 const pad = "px-5 sm:px-10 md:px-[8vw]";
 
@@ -24,11 +25,22 @@ function Scrim({ side }: { side: "left" | "right" | "center" }) {
 }
 
 function ChapterTag({ n, name }: { n: string; name: string }) {
+  // Large outlined numeral so the chapter reads from across the room, with the name on a rule.
   return (
-    <p className="label mb-5 flex items-center gap-3" data-fade>
-      <span className="mono !tracking-[0.12em] text-accent">{n}</span>
-      <span aria-hidden="true" className="h-px w-8 bg-line-strong" />
-      {name}
+    <p className="mb-5 flex items-end gap-5" data-fade>
+      <span
+        aria-hidden="true"
+        className="display mono text-[clamp(2.4rem,min(5vw,8vh),4.4rem)] font-extralight leading-[0.8] tracking-tight text-transparent [-webkit-text-stroke:1px_var(--accent)]"
+      >
+        {n}
+      </span>
+      <span className="flex max-w-[16rem] flex-1 items-center gap-4 pb-1">
+        <span aria-hidden="true" className="h-px flex-1 bg-line-strong" />
+        <span className="label !text-[0.82rem] !text-text">
+          <span className="sr-only">Chapter {n}: </span>
+          {name}
+        </span>
+      </span>
     </p>
   );
 }
@@ -47,7 +59,7 @@ export function Hero() {
             <p className="label" data-fade>
               Emergency brake for AI agent wallets
             </p>
-            <h1 className="display mt-5 text-[clamp(2.9rem,min(7.6vw,13vh),6.8rem)]">
+            <h1 className="display mt-5 text-[clamp(2.3rem,min(5.9vw,10.5vh),5.4rem)]">
               <Words text="Stop the agent before its *next* transaction." />
             </h1>
             <p className={`${body} mt-7 max-w-md`} data-fade>
@@ -164,7 +176,7 @@ export function Act() {
     <section id="act" data-scene data-chapter="03" data-name="Act" className="scene">
       <Scrim side="right" />
       <div data-content className={`relative z-10 flex min-h-[100svh] items-center md:justify-end ${pad}`}>
-        <div className="w-full max-w-[34rem] py-20">
+        <div className="w-full max-w-[40rem] py-20">
           <ChapterTag n="03" name="Act" />
           <h2 className={h2}>
             <Words text="One transaction, signed once, in *advance*." />
@@ -173,12 +185,12 @@ export function Act() {
             The owner signs offline with a durable nonce. At incident time Rem adds only its fee-payer signature and
             sends through Solami Beam and a fallback RPC in parallel, then records which one lands first.
           </p>
-          <ol className="mono mt-8 text-[0.8rem]" aria-label="Instructions in the panic transaction">
+          <ol className="mono mt-6 text-[0.8rem]" aria-label="Instructions in the panic transaction">
             {panic.map(([n, program, ix, account], i) => (
               <li
                 key={n}
                 data-row
-                className={`grid grid-cols-[1.4rem_6.4rem_1fr] items-baseline gap-x-3 border-t border-line py-3 ${i === 0 ? "text-accent" : "text-text"}`}
+                className={`grid grid-cols-[1.4rem_6.4rem_1fr] items-baseline gap-x-3 border-t border-line py-2.5 ${i === 0 ? "text-accent" : "text-text"}`}
               >
                 <span className="text-muted">{n}</span>
                 <span className="text-muted">{program}</span>
@@ -239,20 +251,28 @@ export function Proof() {
   );
 }
 
-const threats = [
-  [
-    "The panic transaction leaks",
-    "It holds only advance nonce, revoke and compute budget. The agent stops. Nothing moves.",
-  ],
-  [
-    "The Rem server is breached",
-    "An attacker can send the revoke and spend the fee payer's small SOL balance. No key can move your funds.",
-  ],
-  ["You change your mind", "Advance the nonce yourself and every transaction signed with it is dead."],
-  [
-    "The first bad transaction lands before detection",
-    "That one is already on-chain. The loss is capped by the allowance, so keep the allowance small.",
-  ],
+const threats: { kind: ThreatKind; title: string; outcome: string }[] = [
+  {
+    kind: "leak",
+    title: "The panic transaction leaks",
+    outcome: "It holds only advance nonce, revoke and compute budget. The agent stops. Nothing moves.",
+  },
+  {
+    kind: "breach",
+    title: "The Rem server is breached",
+    outcome:
+      "An attacker can send the revoke and spend the fee payer's small SOL balance. No key can move your funds.",
+  },
+  {
+    kind: "cancel",
+    title: "You change your mind",
+    outcome: "Advance the nonce yourself and every transaction signed with it is dead.",
+  },
+  {
+    kind: "cap",
+    title: "The first bad transaction lands before detection",
+    outcome: "That one is already on-chain. The loss is capped by the allowance, so keep the allowance small.",
+  },
 ];
 
 export function Threat() {
@@ -262,24 +282,27 @@ export function Threat() {
       <div data-content className={`relative z-10 flex min-h-[100svh] items-center ${pad}`}>
         <div className="w-full py-20">
           <ChapterTag n="05" name="Threat model" />
-          <h2 className={`${h2} max-w-3xl`}>
+          <h2 className={h2}>
             <Words text="Worst case: your agent *stops*." />
           </h2>
-          <ul className="mt-9 max-w-5xl">
-            {threats.map(([t, o]) => (
+          <ul className="mt-6 max-w-5xl">
+            {threats.map((t) => (
               <li
-                key={t}
+                key={t.kind}
                 data-row
-                className="grid gap-2 border-t border-line py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-12"
+                className="grid items-center gap-x-8 gap-y-3 border-t border-line py-2.5 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.25fr)]"
               >
-                <p className="display text-[clamp(1.25rem,2.1vw,1.7rem)] leading-tight">{t}</p>
-                <p className="text-[0.88rem] leading-6 text-muted">{o}</p>
+                <div className="w-44 border border-line bg-surface/60 p-1.5 md:w-[min(12rem,19vh)]">
+                  <ThreatVisual kind={t.kind} />
+                </div>
+                <p className="display text-[clamp(1.05rem,1.6vw,1.3rem)] leading-snug">{t.title}</p>
+                <p className="text-[0.88rem] leading-6 text-muted">{t.outcome}</p>
               </li>
             ))}
           </ul>
           <a
             href={`${REPO}/blob/main/docs/ARCHITECTURE.md#threat-model`}
-            className="btn mt-8"
+            className="btn mt-6"
             target="_blank"
             rel="noreferrer"
             data-fade
@@ -298,7 +321,7 @@ export function Close() {
       <Scrim side="center" />
       <div data-content className={`relative z-10 flex min-h-[100svh] flex-col justify-center ${pad}`}>
         <div className="mx-auto max-w-5xl text-center">
-          <h2 className="display text-[clamp(2.7rem,min(8vw,13vh),7.4rem)]">
+          <h2 className="display text-[clamp(2.2rem,min(6.3vw,10.5vh),5.8rem)]">
             <Words text="Rem only ever stops your *agent*." />
           </h2>
           <p className={`${body} mx-auto mt-7 max-w-md`} data-fade>
