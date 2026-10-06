@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #05080d;
+  --surface: #0a1018;
+  --line: rgba(170, 205, 225, 0.14);
+  --line-strong: rgba(170, 205, 225, 0.32);
+  --text: #e7eef4;
+  --muted: #93a4b3;
+  --accent: #4dd4ec;
+  --warn: #e8b04a;
+  --danger: #ef6a5e;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-display: var(--font-display), "Times New Roman", serif;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--bg);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(77, 212, 236, 0.3);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@layer components {
+/* Type */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 0.98;
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Outline button with corner ticks */
+.btn {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1.4rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+.btn::before,
+.btn::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: var(--text);
+  border-style: solid;
+  opacity: 0.85;
+  transition:
+    width 0.25s ease,
+    height 0.25s ease;
+}
+.btn::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.btn::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 1px 1px 0;
+}
+.btn:hover {
+  border-color: var(--line-strong);
+  background: rgba(231, 238, 244, 0.04);
+}
+.btn:hover::before,
+.btn:hover::after {
+  width: 16px;
+  height: 16px;
+}
+.btn-quiet {
+  border-color: transparent;
+}
+
+  .word-mask {
+    display: inline-block;
+    overflow: hidden;
+    padding-bottom: 0.14em;
+    margin-bottom: -0.14em;
+    vertical-align: top;
+  }
+  .word {
+    display: inline-block;
+  }
+}
+
+/* Landing: word reveal. Hidden only when the motion engine will run. */
+html:is([data-motion="on"], [data-motion="lite"]) .word,
+html:is([data-motion="on"], [data-motion="lite"]) [data-fade],
+html:is([data-motion="on"], [data-motion="lite"]) [data-row] {
+  opacity: 0;
+}
+html:is([data-motion="on"], [data-motion="lite"]) [data-wipe] {
+  clip-path: inset(0 0 0 100%);
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+}
+html[data-motion="on"] .stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+html[data-motion="on"] .scene {
+  position: absolute;
+  inset: 0;
+  height: 100svh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Console */
+.hairline {
+  border-color: var(--line);
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Flowing (lite) mode has no pinned stage, so the chapter counter would sit on top of content. */
+html[data-motion="lite"] [data-hud] {
+  display: none;
+}
