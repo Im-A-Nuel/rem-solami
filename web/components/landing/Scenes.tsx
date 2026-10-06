@@ -1,4 +1,7 @@
 import Link from "next/link";
+import ActVisual, { type ActKind } from "./ActVisual";
+import RuleIcon, { type RuleKind } from "./RuleIcons";
+import StreamVisual from "./StreamVisual";
 import ThreatVisual, { type ThreatKind } from "./ThreatVisual";
 import { Words } from "./Words";
 
@@ -85,123 +88,232 @@ export function Watch() {
   return (
     <section id="watch" data-scene data-chapter="01" data-name="Watch" className="scene">
       <Scrim side="left" />
-      <div data-content className={`relative z-10 flex min-h-[100svh] items-center ${pad}`}>
-        <div className="max-w-[36rem] py-20">
-          <ChapterTag n="01" name="Watch" />
-          <h2 className={h2}>
-            <Words text="Every transaction, the *moment* it lands." />
-          </h2>
-          <p className={`${body} mt-6`} data-fade>
-            Rem subscribes to Solami Yellowstone gRPC with filters on the agent wallet and the owner&apos;s token
-            accounts. After a disconnect it resumes from the last processed slot and drops duplicates by signature.
-          </p>
-          <dl className="mono mt-8 grid max-w-md grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[0.78rem]">
-            {[
-              ["source", "Solami Yellowstone gRPC"],
-              ["filter", "agent wallet + owner token accounts"],
-              ["resume", "from_slot = last processed slot"],
-              ["dedupe", "by transaction signature"],
-            ].map(([k, v]) => (
-              <div key={k} className="contents" data-row>
-                <dt className="text-accent">{k}</dt>
-                <dd className="text-muted">{v}</dd>
-              </div>
-            ))}
-          </dl>
+      <div data-content className={`relative z-10 flex min-h-[100svh] flex-col justify-center ${pad}`}>
+        <div className="py-16">
+          <div className="max-w-[46rem]">
+            <ChapterTag n="01" name="Watch" />
+            <h2 className={h2}>
+              <Words text="Every transaction, the *moment* it lands." />
+            </h2>
+            <p className={`${body} mt-5 max-w-xl`} data-fade>
+              Rem subscribes to Solami Yellowstone gRPC with filters on the agent wallet and the owner&apos;s token
+              accounts. After a disconnect it resumes from the last processed slot and drops duplicates by signature.
+            </p>
+          </div>
+          <div className="mt-8 max-w-6xl">
+            <StreamVisual />
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-const rules = [
-  ["allow_destinations", "A delegated transfer to any address outside the list."],
-  ["max_out_per_minute", "Outflow above the limit in a rolling 60 second window."],
-  ["max_tx_per_10s", "More agent transactions than allowed in a rolling 10 second window."],
-  ["allow_programs", "Any transaction that invokes a program outside the list."],
+const rules: {
+  kind: RuleKind;
+  title: string;
+  tagline: string;
+  text: string;
+  key: string;
+  unit: string;
+}[] = [
+  {
+    kind: "destinations",
+    title: "Destinations",
+    tagline: "Who gets paid",
+    text: "A delegated transfer to any address outside the list breaks the rule.",
+    key: "allow_destinations",
+    unit: "pubkeys",
+  },
+  {
+    kind: "spend",
+    title: "Spend rate",
+    tagline: "How much leaves",
+    text: "Outflow above the limit in a rolling 60 second window.",
+    key: "max_out_per_minute",
+    unit: "base units",
+  },
+  {
+    kind: "burst",
+    title: "Burst",
+    tagline: "How often",
+    text: "More agent transactions than allowed in a rolling 10 second window.",
+    key: "max_tx_per_10s",
+    unit: "count",
+  },
+  {
+    kind: "programs",
+    title: "Programs",
+    tagline: "What it calls",
+    text: "Any transaction that invokes a program outside the list.",
+    key: "allow_programs",
+    unit: "program ids",
+  },
 ];
 
 export function Decide() {
   return (
     <section id="decide" data-scene data-chapter="02" data-name="Decide" className="scene">
-      <div data-content className="relative z-10 grid min-h-[100svh] md:grid-cols-2">
-        <div className={`relative flex items-center ${pad} md:pr-10`}>
-          <Scrim side="left" />
-          <div className="relative max-w-[30rem] py-20">
-            <ChapterTag n="02" name="Decide" />
-            <h2 className={h2}>
-              <Words text="Four rules. No network call." />
-            </h2>
-            <p className={`${body} mt-6`} data-fade>
+      <Scrim side="center" />
+      <div data-content className={`relative z-10 flex min-h-[100svh] flex-col justify-center ${pad}`}>
+        <div className="py-20">
+          <div className="grid gap-x-14 gap-y-5 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:items-end">
+            <div>
+              <ChapterTag n="02" name="Decide" />
+              <h2 className={h2}>
+                <Words text="Four rules. No network call." />
+              </h2>
+            </div>
+            <p className={`${body} max-w-md`} data-fade>
               Policy is a pure function over the event and the agent&apos;s rolling state, evaluated in memory on the
               receive path. Nothing is fetched between seeing a transaction and deciding about it.
             </p>
           </div>
-        </div>
-        <div
-          data-wipe
-          className="relative flex items-center border-l border-line bg-surface/90 px-5 py-20 sm:px-10 md:px-14"
-        >
-          <div className="w-full max-w-xl">
-            <p className="label mb-6">Rules per agent, from rem.yaml</p>
-            <ul>
-              {rules.map(([name, text]) => (
-                <li key={name} data-row className="border-t border-line py-4">
-                  <p className="mono text-[0.88rem] text-accent">{name}</p>
-                  <p className="mt-1 text-[0.9rem] text-muted">{text}</p>
-                </li>
-              ))}
-            </ul>
-            <p className="mono mt-4 border-t border-line pt-4 text-[0.74rem] leading-6 text-muted" data-row>
-              target: under 5 ms per event
-              <br />
-              measured: not yet recorded
-            </p>
-          </div>
+
+          <ul className="mt-9 grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 md:grid-cols-4">
+            {rules.map((r) => (
+              <li
+                key={r.key}
+                data-row
+                className="rule-card relative flex min-h-[15rem] flex-col justify-between rounded-[0.9rem] p-4 md:h-[min(20rem,38vh)] md:min-h-0"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-text/80">
+                    <RuleIcon kind={r.kind} />
+                  </span>
+                  <span className="max-w-[5.5rem] text-right text-[0.6rem] uppercase leading-[1.5] tracking-[0.2em] text-muted">
+                    {r.tagline}
+                  </span>
+                </div>
+
+                <h3 className="display text-center text-[clamp(1.05rem,1.75vw,1.55rem)] uppercase tracking-[0.06em]">
+                  {r.title}
+                </h3>
+
+                <div>
+                  <p className="text-[0.78rem] leading-[1.55] text-muted">{r.text}</p>
+                  <p className="mt-3 flex flex-wrap justify-end gap-1.5">
+                    <span className="mono rounded-full border border-accent/40 px-2.5 py-1 text-[0.6rem] text-accent">
+                      {r.key}
+                    </span>
+                    <span className="mono rounded-full border border-line-strong px-2.5 py-1 text-[0.6rem] text-muted">
+                      {r.unit}
+                    </span>
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <p className="mono mt-5 text-[0.74rem] leading-6 text-muted" data-row>
+            target: under 5 ms per event
+            <span aria-hidden="true" className="mx-3 text-line-strong">
+              |
+            </span>
+            measured: not yet recorded
+          </p>
         </div>
       </div>
     </section>
   );
 }
 
-const panic = [
-  ["1", "System", "AdvanceNonceAccount", "nonce account"],
-  ["2", "ComputeBudget", "SetComputeUnitLimit", ""],
-  ["3", "ComputeBudget", "SetComputeUnitPrice", ""],
-  ["4", "SPL Token", "Revoke", "each watched token account"],
+const panic: {
+  n: string;
+  kind: ActKind;
+  program: string;
+  title: string;
+  tagline: string;
+  text: string;
+}[] = [
+  {
+    n: "01",
+    kind: "nonce",
+    program: "System",
+    title: "AdvanceNonceAccount",
+    tagline: "Always first",
+    text: "Advances the durable nonce. Once it lands, the same transaction cannot be sent again.",
+  },
+  {
+    n: "02",
+    kind: "limit",
+    program: "ComputeBudget",
+    title: "SetComputeUnitLimit",
+    tagline: "Caps the compute",
+    text: "Sets the compute limit the transaction runs under.",
+  },
+  {
+    n: "03",
+    kind: "price",
+    program: "ComputeBudget",
+    title: "SetComputeUnitPrice",
+    tagline: "Pays for priority",
+    text: "A high fixed priority fee, chosen at signing time, because an incident justifies overpaying.",
+  },
+  {
+    n: "04",
+    kind: "revoke",
+    program: "SPL Token",
+    title: "Revoke",
+    tagline: "Cuts the delegate",
+    text: "Clears the agent's delegate on each watched token account.",
+  },
 ];
 
 export function Act() {
   return (
     <section id="act" data-scene data-chapter="03" data-name="Act" className="scene">
-      <Scrim side="right" />
-      <div data-content className={`relative z-10 flex min-h-[100svh] items-center md:justify-end ${pad}`}>
-        <div className="w-full max-w-[40rem] py-20">
-          <ChapterTag n="03" name="Act" />
-          <h2 className={h2}>
-            <Words text="One transaction, signed once, in *advance*." />
-          </h2>
-          <p className={`${body} mt-6`} data-fade>
-            The owner signs offline with a durable nonce. At incident time Rem adds only its fee-payer signature and
-            sends through Solami Beam and a fallback RPC in parallel, then records which one lands first.
-          </p>
-          <ol className="mono mt-6 text-[0.8rem]" aria-label="Instructions in the panic transaction">
-            {panic.map(([n, program, ix, account], i) => (
+      <Scrim side="center" />
+      <div data-content className={`relative z-10 flex min-h-[100svh] flex-col justify-center ${pad}`}>
+        <div className="py-16">
+          <div className="grid gap-x-14 gap-y-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-end">
+            <div>
+              <ChapterTag n="03" name="Act" />
+              <h2 className={h2}>
+                <Words text="One transaction, signed once, in *advance*." />
+              </h2>
+            </div>
+            <p className={`${body} max-w-md md:justify-self-end`} data-fade>
+              The owner signs offline with a durable nonce. At incident time Rem adds only its fee-payer signature and
+              sends through Solami Beam and a fallback RPC in parallel, then records which one lands first.
+            </p>
+          </div>
+
+          <ol
+            aria-label="Instructions in the panic transaction"
+            className="mt-8 grid grid-cols-1 items-center gap-4 min-[520px]:grid-cols-2 md:grid-cols-4"
+          >
+            {panic.map((p, i) => (
               <li
-                key={n}
+                key={p.title}
                 data-row
-                className={`grid grid-cols-[1.4rem_6.4rem_1fr] items-baseline gap-x-3 border-t border-line py-2.5 ${i === 0 ? "text-accent" : "text-text"}`}
+                className={`rule-card relative flex min-h-[16rem] flex-col justify-between overflow-hidden rounded-[0.9rem] p-4 ${
+                  i % 2 === 1 ? "md:h-[min(22rem,41vh)]" : "md:h-[min(18.5rem,35vh)]"
+                } md:min-h-0`}
               >
-                <span className="text-muted">{n}</span>
-                <span className="text-muted">{program}</span>
-                <span>
-                  {ix}
-                  {account && <span className="block text-[0.7rem] text-muted">{account}</span>}
-                </span>
+                <div>
+                  <p className="mono flex items-baseline justify-between text-[0.66rem] text-muted">
+                    <span className={i === 0 ? "text-accent" : ""}>{p.n}</span>
+                    <span>{p.program}</span>
+                  </p>
+                  <h3 className="mono mt-2 break-words text-[clamp(0.85rem,1.15vw,1.02rem)] leading-snug text-text">
+                    {p.title}
+                  </h3>
+                </div>
+
+                <div className="px-1 opacity-90">
+                  <ActVisual kind={p.kind} />
+                </div>
+
+                <div>
+                  <p className="text-[0.6rem] uppercase tracking-[0.2em] text-accent">{p.tagline}</p>
+                  <p className="mt-1.5 text-[0.78rem] leading-[1.5] text-muted">{p.text}</p>
+                </div>
               </li>
             ))}
           </ol>
-          <p className="mt-4 border-t border-line pt-4 text-[0.82rem] text-muted" data-row>
+
+          <p className="mt-5 text-[0.82rem] text-muted" data-row>
             Anything else in this transaction is rejected by <span className="mono text-text">nonce.Validate</span>.
           </p>
         </div>

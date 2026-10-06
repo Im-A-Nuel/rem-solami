@@ -66,6 +66,15 @@ html.lenis body {
 }
 
 @layer components {
+  /* Dark glass card: a lit top edge fading to near black. Gradient only, no backdrop blur. */
+  .rule-card {
+    background: linear-gradient(180deg, rgba(62, 72, 86, 0.5) 0%, rgba(20, 27, 36, 0.86) 48%, rgba(9, 13, 19, 0.94) 100%);
+    border: 1px solid rgba(190, 215, 232, 0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.09),
+      0 24px 40px -28px rgba(0, 0, 0, 0.9);
+  }
+
 /* Type */
 .display {
   font-family: var(--font-display);

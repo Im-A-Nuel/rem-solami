@@ -15,9 +15,9 @@ export interface FieldPose {
 // interpolates from POSES[i] to POSES[i + 1].
 export const POSES: FieldPose[] = [
   { x: 0.38, y: 0, scale: 1.0, dim: 1, trip: 0, spin: 0 }, // hero
-  { x: 0.38, y: 0, scale: 1.12, dim: 1, trip: 0, spin: 1.1 }, // watch
-  { x: -0.42, y: 0.04, scale: 0.86, dim: 0.55, trip: 0, spin: 2.2 }, // decide
-  { x: -0.42, y: 0, scale: 0.95, dim: 0.8, trip: 0, spin: 3.0 }, // act
+  { x: 0.4, y: 0.16, scale: 1.1, dim: 1, trip: 0, spin: 1.1 }, // watch
+  { x: 0.12, y: 0.02, scale: 1.4, dim: 0.5, trip: 0, spin: 2.2 }, // decide
+  { x: 0, y: 0.06, scale: 1.25, dim: 0.85, trip: 0, spin: 3.0 }, // act
   { x: 0.46, y: -0.04, scale: 0.62, dim: 0.34, trip: 1, spin: 3.6 }, // proof
   { x: 0, y: 0, scale: 1.5, dim: 0.2, trip: 1, spin: 4.2 }, // threat
   { x: 0, y: 0, scale: 1.3, dim: 0.28, trip: 1, spin: 4.7 }, // close
