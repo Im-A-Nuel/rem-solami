@@ -48,7 +48,7 @@ If the panic transaction leaks, the worst an attacker can do is stop your agent.
 | Layer | Choice |
 | --- | --- |
 | Watcher, policy, broadcaster, API | TypeScript on Node 22+, `@solana/web3.js`, Yellowstone gRPC client |
-| Storage | SQLite (`node:sqlite`) |
+| Storage | Postgres on Neon |
 | Dashboard | Next.js on Vercel, reads the worker API |
 | Alerts | Telegram bot |
 | Deploy | Worker on one small always-on host, dashboard on Vercel |
@@ -66,8 +66,8 @@ cd worker && pnpm install
 pnpm rem setup --owner ./keys/owner.json --agent <AGENT_PUBKEY> --mint <USDC_MINT> --allowance 5 --out ./panic/demo-agent.json
 
 # on the server
+pnpm rem agent add --config rem.yaml --panic ./panic/demo-agent.json
 pnpm rem watch --config rem.yaml
-pnpm rem serve --config rem.yaml          # API on :8080
 cd ../web && pnpm install && pnpm dev       # dashboard on :3000
 ```
 
@@ -83,15 +83,14 @@ pnpm tsx scripts/rogue-agent.ts --agent ./keys/agent.json --source <OWNER_USDC_A
 rem/
   worker/
     src/
-      cli/              CLI entrypoint: setup, watch, serve, canary
+      cli/              CLI entrypoint: setup, agent add, watch, canary
       config/           rem.yaml loader
       nonce/            nonce account + panic tx builder and validator
       watch/            Yellowstone gRPC subscriber (+ Mirage fallback)
       policy/           rules engine
       broadcast/        Beam sender + RPC confirmation
-      store/            SQLite
+      store/            Postgres migrations and queries
       alert/            Telegram
-      api/              HTTP API for the dashboard
     scripts/            phase0 devnet check, rogue-agent demo attacker
   web/                  Next.js landing + console (Vercel)
   docs/                 requirements, architecture, schema, roadmap, submission

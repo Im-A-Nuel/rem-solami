@@ -37,7 +37,7 @@ Rem dikerjakan berselang dengan Kuota. Rabu 7 Oktober (hari launch Kuota) sengaj
 **Durasi**: 2 hari (Sel 6 sampai Rab 7 Okt)
 
 ### Tasks
-- [ ] Setup `worker/` (TypeScript), struktur modul, SQLite, CI
+- [ ] Setup `worker/` (TypeScript), struktur modul, Postgres (Neon), CI
 - [ ] `rem setup` + `rem agent add`
 - [ ] `worker/src/nonce` `validatePanicTx` + unit test 4 kasus (valid, tanpa advance nonce, ada transfer, urutan salah)
 - [ ] `worker/src/policy`: empat aturan P0 + unit test lolos dan melanggar

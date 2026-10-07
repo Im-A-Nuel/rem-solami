@@ -26,9 +26,8 @@ export interface RemConfig {
   fallbackRpcUrl: string;
   /** Absolute path of Rem's fee payer keypair file. The file is read at startup, never copied into config. */
   feePayerKeypair: string;
-  /** Absolute path of the SQLite file. */
-  dbPath: string;
-  apiAddr: string;
+  /** Postgres connection string (Neon). Secret: never log this, use redactConfig. */
+  databaseUrl: string;
   telegram?: { botToken: string; chatId: string };
   nonceCheckIntervalMs: number;
   agents: AgentConfig[];

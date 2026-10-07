@@ -18,8 +18,7 @@ const ENV = {
   SOLAMI_BEAM_URL: "https://beam.example.dev/send",
   FALLBACK_RPC_URL: "https://api.devnet.solana.com",
   REM_FEE_PAYER_KEYPAIR: "./keys/fee-payer.json",
-  REM_DB_PATH: "./rem.db",
-  REM_API_ADDR: ":8080",
+  DATABASE_URL: "postgresql://rem_worker:DBPASSWORD@ep-test-123.neon.tech/neondb?sslmode=require",
 };
 
 const base = `
@@ -30,8 +29,7 @@ solami:
   beam_url: \${SOLAMI_BEAM_URL}
 fallback_rpc_url: \${FALLBACK_RPC_URL}
 fee_payer_keypair: \${REM_FEE_PAYER_KEYPAIR}
-db_path: \${REM_DB_PATH}
-api_addr: \${REM_API_ADDR}
+database_url: \${DATABASE_URL}
 agents:
   - name: demo-agent
     agent_wallet: ${A}
@@ -70,8 +68,8 @@ describe("parseConfig", () => {
   it("parses a complete config and resolves paths against the config directory", () => {
     const c = parse(base);
     expect(c.solami.grpcEndpoint).toBe("grpc.example.dev:443");
-    expect(c.dbPath).toMatch(/rem\.db$/);
-    expect(c.dbPath.replaceAll("\\", "/")).toContain("/etc/rem");
+    expect(c.databaseUrl).toContain("ep-test-123.neon.tech");
+    expect(c.feePayerKeypair.replaceAll("\\", "/")).toContain("/etc/rem");
     expect(c.nonceCheckIntervalMs).toBe(60_000);
     expect(c.agents[0]).toMatchObject({ name: "demo-agent", mode: "brake", agentWallet: A });
     expect(c.agents[0]?.policy).toEqual({ allowDestinations: [M], maxTxPer10s: 3 });
@@ -113,7 +111,8 @@ describe("parseConfig", () => {
   it("rejects bad addresses, URLs, durations and api_addr", () => {
     expect(() => parse(base.replace(N, "not-an-address"))).toThrow(/not a valid address/);
     expect(() => parse(base, { ...ENV, SOLAMI_BEAM_URL: "ftp://x" })).toThrow(/must start with/);
-    expect(() => parse(base.replace("api_addr: ${REM_API_ADDR}", "api_addr: nope"))).toThrow(/api_addr/);
+    expect(() => parse(base, { ...ENV, DATABASE_URL: "mysql://x/y" })).toThrow(/must start with postgres/);
+    expect(() => parse(base, { ...ENV, DATABASE_URL: "not a url" })).toThrow(/not a valid URL/);
     expect(() => parse(`${base}\nnonce_check_interval: soon`)).toThrow(/duration/);
     expect(() => parse(`${base}\nnonce_check_interval: 200ms`)).toThrow(/at least 1s/);
   });
@@ -164,6 +163,8 @@ describe("redaction", () => {
     const shown = JSON.stringify(redactConfig(c));
     expect(shown).not.toContain("super-secret-token");
     expect(shown).not.toContain("SECRETKEY");
+    expect(shown).not.toContain("DBPASSWORD");
+    expect(shown).toContain("ep-test-123.neon.tech");
     expect(shown).toContain("***");
     expect(shown).toContain("rpc.example.dev");
   });

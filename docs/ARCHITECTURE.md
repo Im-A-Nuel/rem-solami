@@ -25,10 +25,13 @@ Rem is one always-on TypeScript worker with four subcommands and a read-only Nex
    |  policy --violation--> broadcast ----------+------------------------+
    |    |                       |               |
    |    v                       v               |
-   |  store (SQLite) <---- confirm via RPC      |
-   |    |                                       |
-   |  api ---> dashboard (Next.js)   alert ---> Telegram
-   +--------------------------------------------+
+   |  store ---------------+---- confirm via RPC|
+   |    |                  |                    |
+   |    |               alert ---> Telegram     |
+   +----+---------------------------------------+
+        |
+        v
+   Neon Postgres <--- read-only --- dashboard (Next.js on Vercel)
 ```
 
 ## Detection and response sequence
@@ -54,9 +57,8 @@ Reported numbers: detection = `t_decide - t_seen`, send = `t_sent - t_decide`, l
 | `worker/src/watch` | gRPC subscribe with account filters, reconnect, `from_slot` replay, dedupe |
 | `worker/src/policy` | Pure rule functions over an event and per-agent rolling state |
 | `worker/src/broadcast` | Add fee-payer signature, send via Beam and fallback RPC, record timing, confirm |
-| `worker/src/store` | SQLite schema and queries |
+| `worker/src/store` | Postgres migrations and queries |
 | `worker/src/alert` | Telegram messages |
-| `worker/src/api` | JSON API for the dashboard |
 | `web/` | Dashboard: agents, incidents, decoded panic tx, landing health |
 | `scripts/rogue-agent` | Demo attacker using the agent's delegate rights |
 
@@ -66,7 +68,7 @@ Reported numbers: detection = `t_decide - t_seen`, send = `t_sent - t_decide`, l
 - TypeScript on Node 22+
 - `@triton-one/yellowstone-grpc` client
 - `@solana/web3.js` for transaction building, signing, decoding; `@solana/spl-token` for approve and revoke
-- SQLite via built-in `node:sqlite`
+- Postgres on Neon via `pg`; PGlite (Postgres in WASM) for tests
 
 ### Frontend
 - Next.js, Tailwind CSS, Recharts for landing histogram
@@ -76,8 +78,8 @@ Reported numbers: detection = `t_decide - t_seen`, send = `t_sent - t_decide`, l
 - Programs: System Program (durable nonce), SPL Token (approve, revoke), ComputeBudget
 
 ### Infrastructure
-- One always-on host (VPS, Fly.io or Railway) for the worker (`watch` and `serve`). It cannot run on Vercel: it needs a long-lived gRPC stream and in-memory rolling state.
-- Dashboard on Vercel, reading the worker API
+- One always-on host (VPS, Fly.io or Railway) for the worker (`watch`). It cannot run on Vercel: it needs a long-lived gRPC stream and in-memory rolling state.
+- Dashboard on Vercel, reading Neon through its own route handlers with a SELECT-only role. The worker needs no inbound port.
 - CI: GitHub Actions running worker typecheck and tests, dashboard typecheck
 
 ## Key Design Decisions
@@ -116,4 +118,5 @@ Pre-signed durable nonce transactions have been used to drain a protocol. Rem's 
 
 - One gRPC subscription with all watched accounts in the filter; split into several subscriptions past a few hundred accounts.
 - Policy state is per agent and in memory; shard agents across processes by hash if needed.
-- SQLite is enough for the hackathon; move to Postgres when multiple watcher processes write.
+- Neon is shared state, so several watcher processes can write when one is not enough. Policy state stays in memory per process, so shard agents by hash.
+- Writes are queued and never awaited between receive and send. Neon suspends idle compute on its free plan, so the first query after a pause is slower: that is why the broadcast path never touches the database.

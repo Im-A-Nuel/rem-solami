@@ -7,9 +7,7 @@ solami:
 
 fallback_rpc_url: ${FALLBACK_RPC_URL}
 fee_payer_keypair: ${REM_FEE_PAYER_KEYPAIR}
-db_path: ${REM_DB_PATH}
-api_addr: ${REM_API_ADDR}
-
+database_url: ${DATABASE_URL}
 telegram:                              # optional: leave both empty to turn alerts off
   bot_token: ${TELEGRAM_BOT_TOKEN:-}
   chat_id: ${TELEGRAM_CHAT_ID:-}

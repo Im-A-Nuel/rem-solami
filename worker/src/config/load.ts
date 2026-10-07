@@ -133,7 +133,7 @@ export function parseConfig(
   const c = obj(expandTree(tree, opts.env ?? process.env), "rem.yaml");
   only(
     c,
-    ["solami", "fallback_rpc_url", "fee_payer_keypair", "db_path", "api_addr", "telegram", "nonce_check_interval", "agents"],
+    ["solami", "fallback_rpc_url", "fee_payer_keypair", "database_url", "telegram", "nonce_check_interval", "agents"],
     "rem.yaml",
   );
 
@@ -162,9 +162,6 @@ export function parseConfig(
     if (token !== undefined && chat !== undefined) telegram = { botToken: token, chatId: chat };
   }
 
-  const apiAddr = str(c.api_addr, "api_addr");
-  if (!/^[A-Za-z0-9.-]*:\d{1,5}$/.test(apiAddr)) throw new Error("api_addr must look like :8080 or 127.0.0.1:8080.");
-
   if (!Array.isArray(c.agents) || c.agents.length === 0) throw new Error("agents must list at least one agent.");
   const agents = c.agents.map((a, i) => agent(a, i, opts.baseDir));
   const names = new Set(agents.map((a) => a.name));
@@ -174,8 +171,7 @@ export function parseConfig(
     solami,
     fallbackRpcUrl: url(c.fallback_rpc_url, "fallback_rpc_url", ["http:", "https:"]),
     feePayerKeypair: path(c.fee_payer_keypair, "fee_payer_keypair", opts.baseDir),
-    dbPath: path(c.db_path, "db_path", opts.baseDir),
-    apiAddr,
+    databaseUrl: url(c.database_url, "database_url", ["postgres:", "postgresql:"]),
     nonceCheckIntervalMs: c.nonce_check_interval === undefined ? 60_000 : duration(c.nonce_check_interval, "nonce_check_interval"),
     agents,
   };

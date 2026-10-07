@@ -1,3 +1,4 @@
+import { AGENT_USAGE, runAgent } from "./agent.js";
 import { SETUP_USAGE, runSetup } from "./setup.js";
 
 // Subcommands only. Real work lives in the modules the commands call.
@@ -5,7 +6,8 @@ import { SETUP_USAGE, runSetup } from "./setup.js";
 const USAGE = `rem: non-custodial emergency brake for AI agent wallets
 
 Commands:
-  setup    Create the nonce account, approve the agent, and sign the panic transaction (owner's machine)
+  setup      Create the nonce account, approve the agent, and sign the panic transaction (owner's machine)
+  agent add  Validate a panic file and store the agent in the database (server)
 
 Run \`rem <command> --help\` for details.`;
 
@@ -17,6 +19,9 @@ async function main(argv: string[]): Promise<void> {
     case "setup":
       if (wantsHelp) return console.log(SETUP_USAGE);
       return runSetup(rest);
+    case "agent":
+      if (wantsHelp) return console.log(AGENT_USAGE);
+      return runAgent(rest);
     case undefined:
     case "help":
     case "--help":

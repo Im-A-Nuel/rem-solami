@@ -4,7 +4,7 @@ Last updated: Oct 5, 2026
 
 Amounts are `uint64` base units. Times are Unix nanoseconds (`int64`).
 
-## Database Schema (SQLite)
+## Database Schema (Postgres on Neon)
 
 ### agents
 | Field | Type | Constraint | Description |
@@ -118,14 +118,13 @@ See [`rem.example.yaml`](../rem.example.yaml). Policy fields per agent:
 | `rem setup --refresh --owner <keypair> --agent-file <file>` | Re-sign after the nonce changed |
 | `rem agent add --config rem.yaml --panic <file>` | Server: validate and import a panic file |
 | `rem watch --config rem.yaml` | Stream, evaluate, broadcast |
-| `rem serve --config rem.yaml` | HTTP API for the dashboard |
 | `rem canary --config rem.yaml` (P1) | Landing health probes every 10 min |
 
 ---
 
 ## HTTP API
 
-Base URL: `http://<host>:8080/api`. Read-only, no auth in the hackathon build (bind to localhost or put behind basic auth when exposed).
+Served by Next.js route handlers in `web/app/api`, reading Neon with a SELECT-only role. Read-only, same origin as the dashboard, so no CORS. No auth in the hackathon build.
 
 **GET /agents**
 ```json

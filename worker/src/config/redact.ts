@@ -22,8 +22,7 @@ export function redactConfig(c: RemConfig) {
     },
     fallbackRpcUrl: redactUrl(c.fallbackRpcUrl),
     feePayerKeypair: c.feePayerKeypair,
-    dbPath: c.dbPath,
-    apiAddr: c.apiAddr,
+    databaseUrl: redactUrl(c.databaseUrl),
     telegram: c.telegram ? { botToken: "***", chatId: c.telegram.chatId } : undefined,
     nonceCheckIntervalMs: c.nonceCheckIntervalMs,
     agents: c.agents.map((a) => ({
