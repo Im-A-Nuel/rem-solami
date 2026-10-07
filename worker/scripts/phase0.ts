@@ -23,6 +23,7 @@ import {
   LAMPORTS_PER_SOL,
   NONCE_ACCOUNT_LENGTH,
   PublicKey,
+  SendTransactionError,
   SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
@@ -166,15 +167,22 @@ async function main() {
   const nonce1 = await connection.getNonce(nonceKp.publicKey, "confirmed");
   check("nonce advanced when the panic landed", nonce1?.nonce !== nonce0.nonce, "stored value changed");
 
+  // It must fail for the right reason: the token program refusing a delegate that no longer exists.
   let afterFailed = false;
-  let afterMsg = "";
+  let afterWhy = "";
   try {
     await agentTransfer();
   } catch (cause) {
     afterFailed = true;
-    afterMsg = (cause as Error).message.split("\n")[0] ?? "";
+    const e = cause as SendTransactionError;
+    const logs = e.logs ?? (await e.getLogs?.(connection).catch(() => [])) ?? [];
+    afterWhy = [...logs, e.message].join(" | ");
   }
-  check("agent's next delegated transfer fails", afterFailed, afterMsg || "it unexpectedly succeeded");
+  check(
+    "agent's next delegated transfer fails because the delegate is gone",
+    afterFailed && /owner does not match|custom program error: 0x4/i.test(afterWhy),
+    afterWhy.slice(0, 220) || "it unexpectedly succeeded",
+  );
 
   // Replay: re-approve, then resend the exact same bytes. If the replay executed, the delegate would vanish again.
   await approve(connection, owner, ownerAta, agent.publicKey, owner, 5_000_000n);
