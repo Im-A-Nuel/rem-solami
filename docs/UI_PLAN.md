@@ -68,7 +68,7 @@ Setiap layar punya state empty, loading, dan error yang menyebut penyebab dan la
 - [x] Jalankan build produksi, uji elemen interaktif, console bersih (R-35)
 - [ ] Delivery Gate antislop sebagai laporan PASS/FAIL dengan bukti
 
-### UI-4: Sambung ke Go (setelah `internal/api` ada)
+### UI-4: Sambung ke worker (setelah `worker/src/api` ada)
 
 - [ ] Ganti sumber ke API asli, hapus fixture dari jalur produksi
 - [ ] Isi proof links dan angka latency nyata untuk video demo

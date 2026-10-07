@@ -37,10 +37,10 @@ Rem dikerjakan berselang dengan Kuota. Rabu 7 Oktober (hari launch Kuota) sengaj
 **Durasi**: 2 hari (Sel 6 sampai Rab 7 Okt)
 
 ### Tasks
-- [ ] Setup repo Go, struktur `internal/`, SQLite, CI
+- [ ] Setup `worker/` (TypeScript), struktur modul, SQLite, CI
 - [ ] `rem setup` + `rem agent add`
-- [ ] `internal/nonce.Validate` + unit test 4 kasus (valid, tanpa advance nonce, ada transfer, urutan salah)
-- [ ] `internal/policy`: empat aturan P0 + unit test lolos dan melanggar
+- [ ] `worker/src/nonce` `validatePanicTx` + unit test 4 kasus (valid, tanpa advance nonce, ada transfer, urutan salah)
+- [ ] `worker/src/policy`: empat aturan P0 + unit test lolos dan melanggar
 - [ ] Rab 7 (ringan): `scripts/rogue-agent` di devnet
 
 ---
@@ -50,8 +50,8 @@ Rem dikerjakan berselang dengan Kuota. Rabu 7 Oktober (hari launch Kuota) sengaj
 
 ### Tasks
 - [ ] Kam 8: daftar trial Solami Pro, uji gRPC `Subscribe` dengan filter akun
-- [ ] Kam 8: `internal/watch` dengan reconnect, `from_slot` replay, dedupe signature
-- [ ] Jum 9: `internal/broadcast` lewat Beam + RPC paralel, catat timing
+- [ ] Kam 8: `worker/src/watch` dengan reconnect, `from_slot` replay, dedupe signature
+- [ ] Jum 9: `worker/src/broadcast` lewat Beam + RPC paralel, catat timing
 - [ ] Jum 9: konfirmasi delegate kosong lewat RPC
 - [ ] Jum 9: uji end-to-end di mainnet dengan allowance 5 USDC
 
@@ -99,6 +99,6 @@ Rem dikerjakan berselang dengan Kuota. Rabu 7 Oktober (hari launch Kuota) sengaj
 ## Definition of Done
 
 - Berjalan di mainnet dengan link tx
-- Unit test lulus, `go vet` bersih
+- Unit test lulus, typecheck bersih
 - Tidak ada key owner atau agent di server, database, atau log
 - Angka latency punya jumlah sampel

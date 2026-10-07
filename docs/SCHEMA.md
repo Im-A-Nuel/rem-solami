@@ -88,7 +88,7 @@ Amounts are `uint64` base units. Times are Unix nanoseconds (`int64`).
 }
 ```
 
-`internal/nonce.Validate` re-decodes `transaction` and must confirm:
+`validatePanicTx` (`worker/src/nonce`) re-decodes `transaction` and must confirm:
 1. Instruction 0 is `AdvanceNonceAccount` on `nonceAccount` with `owner` as authority.
 2. Every other instruction is ComputeBudget or SPL `Revoke` on a listed token account with `owner` as owner.
 3. Fee payer is `feePayer`, recent blockhash equals `nonceValue`.

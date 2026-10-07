@@ -4,7 +4,7 @@ Last updated: Oct 5, 2026
 
 ## Overview
 
-Rem is a single Go binary with four subcommands and a read-only Next.js dashboard. The owner signs once on their own machine. After that, the server watches, decides, and broadcasts on its own. Its only on-chain capability is to land a revoke that the owner already signed.
+Rem is one always-on TypeScript worker with four subcommands and a read-only Next.js dashboard on Vercel. The owner signs once on their own machine. After that, the server watches, decides, and broadcasts on its own. Its only on-chain capability is to land a revoke that the owner already signed.
 
 ## System Diagram
 
@@ -17,7 +17,7 @@ Rem is a single Go binary with four subcommands and a read-only Next.js dashboar
               | panic.json (no keys)                   ^                 ^
               v                                        | agent tx        | panic tx lands
    +----------+---------------------------------+      |                 |
-   | REM SERVER (Go)                            |  +---+-------+   +-----+--------+
+   | REM WORKER (Node, always-on host)          |  +---+-------+   +-----+--------+
    |                                            |  | Agent     |   | Solami Beam  |
    |  watch <--- Solami Yellowstone gRPC <------+--| (rogue?)  |   +-----+--------+
    |    |                                       |  +-----------+         ^
@@ -49,24 +49,24 @@ Reported numbers: detection = `t_decide - t_seen`, send = `t_sent - t_decide`, l
 
 | Component | Responsibility |
 | --- | --- |
-| `cmd/rem setup` | Create nonce account, approve allowance, build and owner-sign panic tx, write `panic.json` |
-| `internal/nonce` | Build and strictly validate panic transactions |
-| `internal/watch` | gRPC subscribe with account filters, reconnect, `from_slot` replay, dedupe |
-| `internal/policy` | Pure rule functions over an event and per-agent rolling state |
-| `internal/broadcast` | Add fee-payer signature, send via Beam and fallback RPC, record timing, confirm |
-| `internal/store` | SQLite schema and queries |
-| `internal/alert` | Telegram messages |
-| `internal/api` | JSON API for the dashboard |
+| `worker/src/cli` (`rem setup`) | Create nonce account, approve allowance, build and owner-sign panic tx, write `panic.json` |
+| `worker/src/nonce` | Build and strictly validate panic transactions |
+| `worker/src/watch` | gRPC subscribe with account filters, reconnect, `from_slot` replay, dedupe |
+| `worker/src/policy` | Pure rule functions over an event and per-agent rolling state |
+| `worker/src/broadcast` | Add fee-payer signature, send via Beam and fallback RPC, record timing, confirm |
+| `worker/src/store` | SQLite schema and queries |
+| `worker/src/alert` | Telegram messages |
+| `worker/src/api` | JSON API for the dashboard |
 | `web/` | Dashboard: agents, incidents, decoded panic tx, landing health |
 | `scripts/rogue-agent` | Demo attacker using the agent's delegate rights |
 
 ## Tech Stack
 
 ### Backend
-- Go 1.22+
-- Yellowstone gRPC protos and client
-- `github.com/gagliardetto/solana-go` for transaction building, signing, decoding
-- SQLite via `modernc.org/sqlite`
+- TypeScript on Node 22+
+- `@triton-one/yellowstone-grpc` client
+- `@solana/web3.js` for transaction building, signing, decoding; `@solana/spl-token` for approve and revoke
+- SQLite via built-in `node:sqlite`
 
 ### Frontend
 - Next.js, Tailwind CSS, Recharts for landing histogram
@@ -76,9 +76,9 @@ Reported numbers: detection = `t_decide - t_seen`, send = `t_sent - t_decide`, l
 - Programs: System Program (durable nonce), SPL Token (approve, revoke), ComputeBudget
 
 ### Infrastructure
-- One always-on VPS for `watch` and `serve`
-- Dashboard on Vercel or served from the same VPS
-- CI: GitHub Actions running `go vet`, `go test`, dashboard typecheck
+- One always-on host (VPS, Fly.io or Railway) for the worker (`watch` and `serve`). It cannot run on Vercel: it needs a long-lived gRPC stream and in-memory rolling state.
+- Dashboard on Vercel, reading the worker API
+- CI: GitHub Actions running worker typecheck and tests, dashboard typecheck
 
 ## Key Design Decisions
 
@@ -110,7 +110,7 @@ Reported numbers: detection = `t_decide - t_seen`, send = `t_sent - t_decide`, l
 | False positive | Only a revoke happens. Owner re-approves. `alert` mode lets owners tune rules first. |
 | Replay of the panic tx | `AdvanceNonceAccount` is always the first instruction; after landing the nonce changes, so a second send fails. This matters because since Aug 12, 2026 the runtime no longer tracks nonce transactions in its status cache. |
 
-Pre-signed durable nonce transactions have been used to drain a protocol. Rem's design answer is payload restriction: `internal/nonce.Validate` refuses any instruction beyond advance nonce, revoke, and compute budget, and the dashboard shows the decoded payload so anyone can verify it.
+Pre-signed durable nonce transactions have been used to drain a protocol. Rem's design answer is payload restriction: `worker/src/nonce` `validatePanicTx` refuses any instruction beyond advance nonce, revoke, and compute budget, and the dashboard shows the decoded payload so anyone can verify it.
 
 ## Scalability Plan
 

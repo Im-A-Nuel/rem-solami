@@ -47,52 +47,53 @@ If the panic transaction leaks, the worst an attacker can do is stop your agent.
 
 | Layer | Choice |
 | --- | --- |
-| Watcher, policy, broadcaster, API | Go 1.22+, Yellowstone gRPC client, `gagliardetto/solana-go` |
-| Storage | SQLite |
-| Dashboard | Next.js, reads the Go API |
+| Watcher, policy, broadcaster, API | TypeScript on Node 22+, `@solana/web3.js`, Yellowstone gRPC client |
+| Storage | SQLite (`node:sqlite`) |
+| Dashboard | Next.js on Vercel, reads the worker API |
 | Alerts | Telegram bot |
-| Deploy | One small always-on VPS |
+| Deploy | Worker on one small always-on host, dashboard on Vercel |
 
 ## Quick start
 
-Prerequisites: Go 1.22+, Node 20+ and pnpm (dashboard), Solana CLI, a Solami API key with gRPC streaming enabled (Pro trial works), a Telegram bot token.
+Prerequisites: Node 22+ and pnpm, a Solami API key with gRPC streaming enabled (Pro trial works), a Telegram bot token.
 
 ```bash
 git clone https://github.com/<you>/rem && cd rem
 cp .env.example .env && cp rem.example.yaml rem.yaml   # fill in keys and addresses
-go build -o bin/rem ./cmd/rem
+cd worker && pnpm install
 
 # on the owner's machine: sign once, offline
-./bin/rem setup --owner ./keys/owner.json --agent <AGENT_PUBKEY> --mint <USDC_MINT> --allowance 5 --out ./panic/demo-agent.json
+pnpm rem setup --owner ./keys/owner.json --agent <AGENT_PUBKEY> --mint <USDC_MINT> --allowance 5 --out ./panic/demo-agent.json
 
 # on the server
-./bin/rem watch --config rem.yaml
-./bin/rem serve --config rem.yaml          # API on :8080
-cd web && pnpm install && pnpm dev         # dashboard on :3000
+pnpm rem watch --config rem.yaml
+pnpm rem serve --config rem.yaml          # API on :8080
+cd ../web && pnpm install && pnpm dev       # dashboard on :3000
 ```
 
 Reproduce the demo with your own key:
 
 ```bash
-go run ./scripts/rogue-agent --agent ./keys/agent.json --source <OWNER_USDC_ATA> --to <UNKNOWN_ADDRESS> --amount 0.5 --repeat 10
+pnpm tsx scripts/rogue-agent.ts --agent ./keys/agent.json --source <OWNER_USDC_ATA> --to <UNKNOWN_ADDRESS> --amount 0.5 --repeat 10
 ```
 
 ## Project structure
 
 ```
 rem/
-  cmd/rem/              CLI entrypoint: setup, watch, serve, canary
-  internal/
-    config/             rem.yaml loader
-    nonce/              nonce account + panic tx builder and validator
-    watch/              Yellowstone gRPC subscriber (+ Mirage fallback)
-    policy/             rules engine
-    broadcast/          Beam sender + RPC confirmation
-    store/              SQLite
-    alert/              Telegram
-    api/                HTTP API for the dashboard
-  scripts/rogue-agent/  demo attacker
-  web/                  Next.js dashboard
+  worker/
+    src/
+      cli/              CLI entrypoint: setup, watch, serve, canary
+      config/           rem.yaml loader
+      nonce/            nonce account + panic tx builder and validator
+      watch/            Yellowstone gRPC subscriber (+ Mirage fallback)
+      policy/           rules engine
+      broadcast/        Beam sender + RPC confirmation
+      store/            SQLite
+      alert/            Telegram
+      api/              HTTP API for the dashboard
+    scripts/            phase0 devnet check, rogue-agent demo attacker
+  web/                  Next.js landing + console (Vercel)
   docs/                 requirements, architecture, schema, roadmap, submission
 ```
 
