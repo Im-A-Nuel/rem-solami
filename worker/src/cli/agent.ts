@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { Connection } from "@solana/web3.js";
 import { addAgent } from "../agent/add.js";
@@ -7,6 +6,7 @@ import { rpcChain } from "../chain/index.js";
 import { loadConfig, type AgentConfig } from "../config/index.js";
 import type { PanicFile } from "../nonce/index.js";
 import { connectPg } from "../store/index.js";
+import { fromUserDir } from "./paths.js";
 import { nowNs } from "../time.js";
 
 export const AGENT_USAGE = `Usage:
@@ -35,10 +35,10 @@ export async function runAgent(argv: string[]): Promise<void> {
   });
   if (!v.config) throw new Error(`Missing --config.\n\n${AGENT_USAGE}`);
 
-  const config = loadConfig(v.config);
+  const config = loadConfig(fromUserDir(v.config));
   let targets: { agent: AgentConfig; file: PanicFile }[];
   if (v.panic) {
-    const file = readPanic(resolve(v.panic));
+    const file = readPanic(fromUserDir(v.panic));
     const agent = config.agents.find((a) => a.agentWallet === file.agent);
     if (!agent) throw new Error(`No agent in rem.yaml has the wallet ${file.agent} that this panic file is for.`);
     targets = [{ agent, file }];

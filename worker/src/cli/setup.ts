@@ -4,6 +4,7 @@ import { parseArgs } from "node:util";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { clusterOf, refreshPanicFile, setupAgent, type PanicFile } from "../nonce/index.js";
 import { loadKeypair } from "./keys.js";
+import { fromUserDir } from "./paths.js";
 
 export const SETUP_USAGE = `Usage:
   rem setup --owner <keypair.json> --agent <pubkey> --mint <mint> [--mint <mint> ...]
@@ -68,13 +69,13 @@ export async function runSetup(argv: string[]): Promise<void> {
     throw new Error("This is mainnet-beta. Re-run with --allow-mainnet if that is what you intend.");
   }
 
-  const owner = loadKeypair(need(v.owner, "owner"));
+  const owner = loadKeypair(fromUserDir(need(v.owner, "owner")));
 
   if (v.refresh) {
-    const agentFile = resolve(need(v["agent-file"], "agent-file"));
+    const agentFile = fromUserDir(need(v["agent-file"], "agent-file"));
     const old = JSON.parse(readFileSync(agentFile, "utf8")) as PanicFile;
     const file = await refreshPanicFile({ connection, owner, file: old });
-    const out = writeOut(v.out ?? agentFile, file, true);
+    const out = writeOut(v.out ? fromUserDir(v.out) : agentFile, file, true);
     console.log(`Re-signed. New nonce value ${file.nonceValue}`);
     console.log(`Panic file: ${out}`);
     console.log("Copy it to the server again with `rem agent add`.");
@@ -85,9 +86,9 @@ export async function runSetup(argv: string[]): Promise<void> {
   const feePayer = pubkey(need(v["fee-payer"], "fee-payer"), "fee-payer");
   const mints = need(v.mint, "mint").map((m) => pubkey(m, "mint"));
   const allowance = need(v.allowance, "allowance");
-  const outPath = need(v.out, "out");
-  if (existsSync(resolve(outPath)) && !v.force) {
-    throw new Error(`${resolve(outPath)} already exists. Use --force to overwrite it.`);
+  const outPath = fromUserDir(need(v.out, "out"));
+  if (existsSync(outPath) && !v.force) {
+    throw new Error(`${outPath} already exists. Use --force to overwrite it.`);
   }
 
   const { file, allowances } = await setupAgent({

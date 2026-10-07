@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "rem": "tsx src/cli/index.ts",
+    "rem": "tsx --env-file-if-exists=../.env --env-file-if-exists=.env src/cli/index.ts",
     "phase0": "tsx scripts/phase0.ts"
   },
   "dependencies": {

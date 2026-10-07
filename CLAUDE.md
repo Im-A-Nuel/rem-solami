@@ -15,14 +15,14 @@ The watcher cannot run on Vercel: it needs a long-lived gRPC stream and in-memor
 
 ## Commands
 ```bash
-cd worker
-pnpm test
-pnpm typecheck
-pnpm rem setup --owner ./keys/owner.json --agent <PUBKEY> --mint <MINT> --allowance 5 --fee-payer <PUBKEY> --out ./panic/x.json
-pnpm rem agent add --config rem.yaml --panic ./panic/x.json
-pnpm rem watch --config rem.yaml
-pnpm phase0            # devnet: durable-nonce panic tx signed earlier still lands
-cd ../web && pnpm dev
+# From the repo root. `rem` loads ./.env and resolves paths from where you type the command.
+pnpm --dir worker test
+pnpm --dir worker typecheck
+pnpm --dir worker rem setup --rpc <URL> --owner ./keys/owner.json --agent <PUBKEY> --mint <MINT> --allowance 5 --fee-payer <PUBKEY> --out ./panic/x.json
+pnpm --dir worker rem agent add --config rem.yaml --panic ./panic/x.json
+pnpm --dir worker rem watch --config rem.yaml
+pnpm --dir worker phase0     # devnet: durable-nonce panic tx signed earlier still lands
+pnpm --dir web dev
 ```
 
 ## Project Structure

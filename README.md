@@ -55,26 +55,29 @@ If the panic transaction leaks, the worst an attacker can do is stop your agent.
 
 ## Quick start
 
-Prerequisites: Node 22+ and pnpm, a Solami API key with gRPC streaming enabled (Pro trial works), a Telegram bot token.
+Prerequisites: Node 22+ and pnpm, a Solami API key with gRPC streaming enabled (Pro trial works), a Neon Postgres database (the free plan works), and optionally a Telegram bot token.
 
 ```bash
 git clone https://github.com/<you>/rem && cd rem
-cp .env.example .env && cp rem.example.yaml rem.yaml   # fill in keys and addresses
-cd worker && pnpm install
+cp .env.example .env && cp rem.example.yaml rem.yaml   # fill in keys, DATABASE_URL and addresses
+pnpm --dir worker install
+
+# Run every command from the repo root. Paths are relative to where you type them,
+# and .env at the repo root is loaded automatically.
 
 # on the owner's machine: sign once, offline
-pnpm rem setup --owner ./keys/owner.json --agent <AGENT_PUBKEY> --mint <USDC_MINT> --allowance 5 --out ./panic/demo-agent.json
+pnpm --dir worker rem setup --rpc <RPC_URL> --owner ./keys/owner.json --agent <AGENT_PUBKEY> \n  --mint <USDC_MINT> --allowance 5 --fee-payer <REM_FEE_PAYER_PUBKEY> --out ./panic/demo-agent.json
 
 # on the server
-pnpm rem agent add --config rem.yaml --panic ./panic/demo-agent.json
-pnpm rem watch --config rem.yaml
-cd ../web && pnpm install && pnpm dev       # dashboard on :3000
+pnpm --dir worker rem agent add --config rem.yaml --panic ./panic/demo-agent.json
+pnpm --dir worker rem watch --config rem.yaml
+pnpm --dir web install && pnpm --dir web dev    # dashboard on :3000
 ```
 
 Reproduce the demo with your own key:
 
 ```bash
-pnpm tsx scripts/rogue-agent.ts --agent ./keys/agent.json --source <OWNER_USDC_ATA> --to <UNKNOWN_ADDRESS> --amount 0.5 --repeat 10
+pnpm --dir worker tsx scripts/rogue-agent.ts --agent ./keys/agent.json --source <OWNER_USDC_ATA> --to <UNKNOWN_ADDRESS> --amount 0.5 --repeat 10
 ```
 
 ## Project structure
