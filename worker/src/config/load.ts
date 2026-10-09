@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { parse } from "yaml";
 import { parsePolicy } from "../policy/index.js";
-import { expandTree } from "./env.js";
+import { expandTree, withSolamiDefaults } from "./env.js";
 import type { AgentConfig, RemConfig } from "./types.js";
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const PLACEHOLDER = /^<[^>]+>$/;
+// A <TOKEN> left anywhere in a value, such as inside a URL: the key was never pasted in.
+const PLACEHOLDER = /<[A-Za-z0-9_ ]{2,}>/;
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
 type Obj = Record<string, unknown>;
@@ -25,7 +26,9 @@ function only(o: Obj, allowed: string[], where: string): void {
 
 function str(v: unknown, where: string): string {
   if (typeof v !== "string") throw new Error(`${where} is required and must be text.`);
-  if (PLACEHOLDER.test(v.trim())) throw new Error(`${where} is still a placeholder (${v}). Replace it with a real value.`);
+  // Report only the placeholder itself: the rest of the value may hold a secret.
+  const left = PLACEHOLDER.exec(v);
+  if (left) throw new Error(`${where} still contains the placeholder ${left[0]}. Replace it with a real value.`);
   if (v.trim() === "") throw new Error(`${where} must not be empty.`);
   return v.trim();
 }
@@ -122,7 +125,12 @@ function agent(raw: unknown, i: number, baseDir: string): AgentConfig {
 /** Parses rem.yaml text. Env expansion happens first, then strict validation of the whole tree. */
 export function parseConfig(
   text: string,
-  opts: { env?: Record<string, string | undefined>; baseDir: string },
+  opts: {
+    env?: Record<string, string | undefined>;
+    baseDir: string;
+    /** "skip" leaves the agents list unchecked, for tools such as `rem doctor` that run before agents are filled in. */
+    agents?: "required" | "skip";
+  },
 ): RemConfig {
   let tree: unknown;
   try {
@@ -162,10 +170,13 @@ export function parseConfig(
     if (token !== undefined && chat !== undefined) telegram = { botToken: token, chatId: chat };
   }
 
-  if (!Array.isArray(c.agents) || c.agents.length === 0) throw new Error("agents must list at least one agent.");
-  const agents = c.agents.map((a, i) => agent(a, i, opts.baseDir));
-  const names = new Set(agents.map((a) => a.name));
-  if (names.size !== agents.length) throw new Error("agents has two entries with the same name.");
+  let agents: AgentConfig[] = [];
+  if (opts.agents !== "skip") {
+    if (!Array.isArray(c.agents) || c.agents.length === 0) throw new Error("agents must list at least one agent.");
+    agents = c.agents.map((a, i) => agent(a, i, opts.baseDir));
+    const names = new Set(agents.map((a) => a.name));
+    if (names.size !== agents.length) throw new Error("agents has two entries with the same name.");
+  }
 
   const config: RemConfig = {
     solami,
@@ -179,7 +190,11 @@ export function parseConfig(
   return config;
 }
 
-export function loadConfig(file: string, env: Record<string, string | undefined> = process.env): RemConfig {
+export function loadConfig(
+  file: string,
+  env: Record<string, string | undefined> = process.env,
+  agents: "required" | "skip" = "required",
+): RemConfig {
   const abs = resolve(file);
   let text: string;
   try {
@@ -187,5 +202,5 @@ export function loadConfig(file: string, env: Record<string, string | undefined>
   } catch (cause) {
     throw new Error(`Cannot read the config file ${abs}`, { cause });
   }
-  return parseConfig(text, { env, baseDir: dirname(abs) });
+  return parseConfig(text, { env: withSolamiDefaults(env).env, baseDir: dirname(abs), agents });
 }

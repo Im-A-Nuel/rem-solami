@@ -1,4 +1,4 @@
-export { connectPg, type Db, type QueryResult } from "./db.js";
+export { connectPg, normalizePgUrl, type Db, type QueryResult } from "./db.js";
 export { migrate } from "./migrate.js";
 export { MIGRATIONS, type Migration } from "./migrations.js";
 export {

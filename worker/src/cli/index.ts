@@ -1,4 +1,6 @@
 import { AGENT_USAGE, runAgent } from "./agent.js";
+import { DOCTOR_USAGE, runDoctorCommand } from "./doctor.js";
+import { KEYGEN_USAGE, runKeygen } from "./keygen.js";
 import { SETUP_USAGE, runSetup } from "./setup.js";
 
 // Subcommands only. Real work lives in the modules the commands call.
@@ -8,6 +10,8 @@ const USAGE = `rem: non-custodial emergency brake for AI agent wallets
 Commands:
   setup      Create the nonce account, approve the agent, and sign the panic transaction (owner's machine)
   agent add  Validate a panic file and store the agent in the database (server)
+  keygen     Create a new keypair file and print its public key
+  doctor     Check that the keys and services in .env and rem.yaml work (nothing is sent or written)
 
 Run \`rem <command> --help\` for details.`;
 
@@ -22,6 +26,12 @@ async function main(argv: string[]): Promise<void> {
     case "agent":
       if (wantsHelp) return console.log(AGENT_USAGE);
       return runAgent(rest);
+    case "keygen":
+      if (wantsHelp) return console.log(KEYGEN_USAGE);
+      return runKeygen(rest);
+    case "doctor":
+      if (wantsHelp) return console.log(DOCTOR_USAGE);
+      return runDoctorCommand(rest);
     case undefined:
     case "help":
     case "--help":

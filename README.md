@@ -60,10 +60,15 @@ Prerequisites: Node 22+ and pnpm, a Solami API key with gRPC streaming enabled (
 ```bash
 git clone https://github.com/<you>/rem && cd rem
 cp .env.example .env && cp rem.example.yaml rem.yaml   # fill in keys, DATABASE_URL and addresses
+# SOLAMI_API_KEY alone is enough: the gRPC token and the RPC and landing URLs are built from it.
+pnpm --dir worker rem keygen --out ./keys/fee-payer.json   # a fresh wallet that holds only SOL
 pnpm --dir worker install
 
 # Run every command from the repo root. Paths are relative to where you type them,
 # and .env at the repo root is loaded automatically.
+
+# check that every key and service works (sends nothing, masks secrets)
+pnpm --dir worker rem doctor
 
 # on the owner's machine: sign once, offline
 pnpm --dir worker rem setup --rpc <RPC_URL> --owner ./keys/owner.json --agent <AGENT_PUBKEY> \n  --mint <USDC_MINT> --allowance 5 --fee-payer <REM_FEE_PAYER_PUBKEY> --out ./panic/demo-agent.json

@@ -5,7 +5,7 @@ Rem: non-custodial emergency brake for AI agent wallets. Streams agent tx via So
 
 ## Stack
 - Worker: TypeScript on Node 22+ in `worker/`, one always-on process (watch, policy, broadcast). ESM, strict TS.
-- `@solana/web3.js` (v1) for tx build/sign/decode, `@solana/spl-token` for approve/revoke, `@triton-one/yellowstone-grpc` for the Yellowstone stream.
+- `@solana/web3.js` (v1) for tx build/sign/decode, `@solana/spl-token` for approve/revoke, `@triton-one/yellowstone-grpc` for the Yellowstone stream, pinned to 4.0.2: the last release that is plain JavaScript. From 5.0 it ships native binaries with no Windows build.
 - Database: Postgres on Neon, via `pg` (pure JS). Tests run the same SQL on PGlite (Postgres compiled to WASM), so they need no server and no native addon.
 - Tests: Vitest. Runner: `tsx`.
 - Dashboard: Next.js in `web/`, deployed on Vercel. Its route handlers read Neon directly with a SELECT-only database role. There is no worker HTTP API.
@@ -18,6 +18,8 @@ The watcher cannot run on Vercel: it needs a long-lived gRPC stream and in-memor
 # From the repo root. `rem` loads ./.env and resolves paths from where you type the command.
 pnpm --dir worker test
 pnpm --dir worker typecheck
+pnpm --dir worker rem keygen --out ./keys/fee-payer.json   # prints only the public key
+pnpm --dir worker rem doctor                              # checks keys and services, output is safe to paste
 pnpm --dir worker rem setup --rpc <URL> --owner ./keys/owner.json --agent <PUBKEY> --mint <MINT> --allowance 5 --fee-payer <PUBKEY> --out ./panic/x.json
 pnpm --dir worker rem agent add --config rem.yaml --panic ./panic/x.json
 pnpm --dir worker rem watch --config rem.yaml

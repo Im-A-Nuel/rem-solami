@@ -1,3 +1,36 @@
+// The Solami RPC host from their docs. solami.dev points at the same servers.
+const SOLAMI_RPC_BASE = "https://rpc.solami.fast/sol";
+
+/**
+ * Lets one key do the work. If SOLAMI_API_KEY is set, the gRPC token and the RPC and landing URLs that are
+ * left empty are built from it. A variable that is set always wins, so a separate SWQoS key still works
+ * (SOLAMI_SWQOS_KEY, or a full SOLAMI_BEAM_URL). Returns a copy and the names that were derived.
+ */
+export function withSolamiDefaults(env: Record<string, string | undefined>): {
+  env: Record<string, string | undefined>;
+  derived: string[];
+} {
+  const out = { ...env };
+  const derived: string[] = [];
+  const key = env.SOLAMI_API_KEY?.trim();
+  if (!key) return { env: out, derived };
+  const url = (k: string) => `${SOLAMI_RPC_BASE}?api_key=${encodeURIComponent(k)}`;
+  const empty = (name: string) => !env[name] || env[name]?.trim() === "";
+  if (empty("SOLAMI_GRPC_TOKEN")) {
+    out.SOLAMI_GRPC_TOKEN = key;
+    derived.push("SOLAMI_GRPC_TOKEN");
+  }
+  if (empty("SOLAMI_RPC_URL")) {
+    out.SOLAMI_RPC_URL = url(key);
+    derived.push("SOLAMI_RPC_URL");
+  }
+  if (empty("SOLAMI_BEAM_URL")) {
+    out.SOLAMI_BEAM_URL = url(env.SOLAMI_SWQOS_KEY?.trim() || key);
+    derived.push("SOLAMI_BEAM_URL");
+  }
+  return { env: out, derived };
+}
+
 const REF = /\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g;
 
 /**

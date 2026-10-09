@@ -1,7 +1,14 @@
 import type { Chain } from "../chain/index.js";
 import type { AgentConfig } from "../config/index.js";
 import { validatePanicTx, type PanicFile } from "../nonce/index.js";
-import { migrate, upsertAgent, type AgentStatus, type Db } from "../store/index.js";
+import { migrate, upsertAgent, type AgentInput, type AgentStatus, type Db } from "../store/index.js";
+
+export interface AgentCheck {
+  /** Exactly what would be stored. */
+  input: AgentInput;
+  status: AgentStatus;
+  warnings: string[];
+}
 
 export interface AddAgentResult {
   id: number;
@@ -13,17 +20,11 @@ const sameSet = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
 
 /**
- * Imports one agent. Nothing reaches the database unless every check passes: the panic file must be
- * valid and match rem.yaml, and the chain must agree about the nonce and the token accounts. The checks
- * stop a file written for someone else, or for a different setup, from being stored under this agent.
+ * Every check `agent add` makes, without touching the database: the panic file must be valid and match
+ * rem.yaml, and the chain must agree about the nonce and the token accounts. They stop a file written for
+ * someone else, or for a different setup, from being accepted for this agent. `rem doctor` reuses this.
  */
-export async function addAgent(p: {
-  db: Db;
-  chain: Chain;
-  config: AgentConfig;
-  file: PanicFile;
-  nowNs: bigint;
-}): Promise<AddAgentResult> {
+export async function checkAgent(p: { chain: Chain; config: AgentConfig; file: PanicFile }): Promise<AgentCheck> {
   const { config, file, chain } = p;
 
   const v = validatePanicTx(file);
@@ -76,10 +77,10 @@ export async function addAgent(p: {
   // Status: stale beats armed because a stale file cannot do its job. No delegation at all means disarmed.
   const status: AgentStatus = !nonceHealthy ? "stale" : delegatedToAgent === 0 ? "disarmed" : "armed";
 
-  await migrate(p.db);
-  const id = await upsertAgent(
-    p.db,
-    {
+  return {
+    status,
+    warnings,
+    input: {
       name: config.name,
       agentWallet: config.agentWallet,
       ownerWallet: config.ownerWallet,
@@ -94,7 +95,19 @@ export async function addAgent(p: {
       allowanceRemaining: allowance,
       tokenAccounts: file.tokenAccounts,
     },
-    p.nowNs,
-  );
-  return { id, status, warnings };
+  };
+}
+
+/** Imports one agent. Nothing reaches the database unless checkAgent passes. */
+export async function addAgent(p: {
+  db: Db;
+  chain: Chain;
+  config: AgentConfig;
+  file: PanicFile;
+  nowNs: bigint;
+}): Promise<AddAgentResult> {
+  const checked = await checkAgent(p);
+  await migrate(p.db);
+  const id = await upsertAgent(p.db, checked.input, p.nowNs);
+  return { id, status: checked.status, warnings: checked.warnings };
 }

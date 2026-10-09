@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { expandEnv } from "./env.js";
+import { withSolamiDefaults } from "./env.js";
 import { parseConfig } from "./load.js";
 import { redactConfig, redactUrl } from "./redact.js";
 
@@ -88,7 +89,18 @@ describe("parseConfig", () => {
   });
 
   it("rejects placeholders that were never filled in", () => {
-    expect(() => parse(base.replace(A, "<AGENT_PUBKEY>"))).toThrow(/still a placeholder/);
+    expect(() => parse(base.replace(A, "<AGENT_PUBKEY>"))).toThrow(/still contains the placeholder <AGENT_PUBKEY>/);
+  });
+
+  it("rejects a placeholder left inside a value without echoing the rest of the value", () => {
+    const env = { ...ENV, SOLAMI_RPC_URL: "https://rpc.example.dev/sol?api_key=<PASTE_RPC_KEY>" };
+    expect(() => parse(base, env)).toThrow(/solami\.rpc_url still contains the placeholder <PASTE_RPC_KEY>/);
+    try {
+      parse(base, { ...env, SOLAMI_GRPC_TOKEN: "super-secret-token" });
+    } catch (e) {
+      expect((e as Error).message).not.toContain("rpc.example.dev");
+      expect((e as Error).message).not.toContain("super-secret-token");
+    }
   });
 
   it("requires an explicit mode", () => {
@@ -138,7 +150,7 @@ describe("the shipped rem.example.yaml", () => {
   const text = readFileSync(resolve(import.meta.dirname, "../../../rem.example.yaml"), "utf8");
 
   it("refuses to run until its placeholders are replaced", () => {
-    expect(() => parse(text)).toThrow(/still a placeholder/);
+    expect(() => parse(text)).toThrow(/still contains the placeholder <AGENT_PUBKEY>/);
   });
 
   it("parses once the placeholders are filled in", () => {
@@ -172,5 +184,48 @@ describe("redaction", () => {
   it("drops URL credentials", () => {
     expect(redactUrl("https://user:pass@host.dev/path?key=1")).toBe("https://host.dev/path?…");
     expect(redactUrl("wss://ws.dev/stream")).toBe("wss://ws.dev/stream");
+  });
+});
+
+describe("withSolamiDefaults", () => {
+  const key = "ONEKEY-abcdef123456";
+
+  it("builds the gRPC token and the RPC and landing URLs from one key", () => {
+    const { env, derived } = withSolamiDefaults({ SOLAMI_API_KEY: key });
+    expect(env.SOLAMI_GRPC_TOKEN).toBe(key);
+    expect(env.SOLAMI_RPC_URL).toBe(`https://rpc.solami.fast/sol?api_key=${key}`);
+    expect(env.SOLAMI_BEAM_URL).toBe(`https://rpc.solami.fast/sol?api_key=${key}`);
+    expect(derived).toEqual(["SOLAMI_GRPC_TOKEN", "SOLAMI_RPC_URL", "SOLAMI_BEAM_URL"]);
+  });
+
+  it("never overrides a variable that is set", () => {
+    const { env, derived } = withSolamiDefaults({
+      SOLAMI_API_KEY: key,
+      SOLAMI_GRPC_TOKEN: "own-grpc-token",
+      SOLAMI_RPC_URL: "https://my.rpc/sol?api_key=mine",
+    });
+    expect(env.SOLAMI_GRPC_TOKEN).toBe("own-grpc-token");
+    expect(env.SOLAMI_RPC_URL).toBe("https://my.rpc/sol?api_key=mine");
+    expect(derived).toEqual(["SOLAMI_BEAM_URL"]);
+  });
+
+  it("uses a separate SWQoS key for landing when there is one", () => {
+    const { env } = withSolamiDefaults({ SOLAMI_API_KEY: key, SOLAMI_SWQOS_KEY: "SWQOS-abcdef123456" });
+    expect(env.SOLAMI_BEAM_URL).toBe("https://rpc.solami.fast/sol?api_key=SWQOS-abcdef123456");
+    expect(env.SOLAMI_RPC_URL).toContain(key);
+  });
+
+  it("treats empty or blank values as unset and encodes the key", () => {
+    const { env } = withSolamiDefaults({ SOLAMI_API_KEY: "a b&c", SOLAMI_RPC_URL: "  ", SOLAMI_GRPC_TOKEN: "" });
+    expect(env.SOLAMI_RPC_URL).toBe("https://rpc.solami.fast/sol?api_key=a%20b%26c");
+    expect(env.SOLAMI_GRPC_TOKEN).toBe("a b&c");
+  });
+
+  it("does nothing without a key and does not touch its input", () => {
+    const input = { SOLAMI_API_KEY: key };
+    const out = withSolamiDefaults(input);
+    expect(input).toEqual({ SOLAMI_API_KEY: key });
+    expect(withSolamiDefaults({})).toEqual({ env: {}, derived: [] });
+    expect(out.env).not.toBe(input);
   });
 });

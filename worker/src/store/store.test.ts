@@ -3,6 +3,7 @@ import type { DecodedInstruction } from "../nonce/index.js";
 import { getAgentByName, listAgents, patchAgent, upsertAgent, type AgentInput } from "./agents.js";
 import type { Db } from "./db.js";
 import { loadRecentEvents, recordEvent, type EventInput } from "./events.js";
+import { normalizePgUrl } from "./db.js";
 import { migrate } from "./migrate.js";
 import { MIGRATIONS } from "./migrations.js";
 import { connectPglite } from "./testing.js";
@@ -268,5 +269,30 @@ describe("landings and incidents", () => {
     await recordEvent(db, event(id, { signature: "real", verdict: "violation", rule: "allow_programs" }));
     await insert("real");
     expect((await db.query("SELECT 1 FROM incidents")).rowCount).toBe(1);
+  });
+});
+
+describe("normalizePgUrl", () => {
+  it("says verify-full outright for the modes pg is about to change, and keeps the rest of the URL", () => {
+    const url = "postgresql://user:p%40ss@ep-x-pooler.neon.tech/neondb?sslmode=require&application_name=rem";
+    const out = normalizePgUrl(url);
+    expect(out).toContain("sslmode=verify-full");
+    expect(out).toContain("application_name=rem");
+    expect(out).toContain("p%40ss");
+    expect(out).toContain("ep-x-pooler.neon.tech");
+    expect(normalizePgUrl("postgres://u:p@h/db?sslmode=prefer")).toContain("sslmode=verify-full");
+    expect(normalizePgUrl("postgres://u:p@h/db?sslmode=verify-ca")).toContain("sslmode=verify-full");
+  });
+
+  it("leaves other settings alone", () => {
+    for (const url of [
+      "postgres://u:p@h/db?sslmode=verify-full",
+      "postgres://u:p@h/db?sslmode=disable",
+      "postgres://u:p@h/db",
+      "postgres://u:p@h/db?uselibpqcompat=true&sslmode=require",
+      "not a url",
+    ]) {
+      expect(normalizePgUrl(url)).toBe(url);
+    }
   });
 });

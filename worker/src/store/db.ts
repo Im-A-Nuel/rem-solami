@@ -48,13 +48,32 @@ function fromClient(client: pg.PoolClient | pg.Pool, owner: { pool?: pg.Pool }):
 }
 
 /**
+ * pg currently treats sslmode require, prefer and verify-ca as verify-full, and warns that a future major
+ * version will weaken that. Say verify-full outright to keep the strict behaviour and stop the warning.
+ * Neon's certificates are signed by a public CA, so full verification works.
+ */
+export function normalizePgUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const mode = u.searchParams.get("sslmode");
+    if (mode && ["require", "prefer", "verify-ca"].includes(mode) && !u.searchParams.has("uselibpqcompat")) {
+      u.searchParams.set("sslmode", "verify-full");
+      return u.toString();
+    }
+  } catch {
+    /* leave an unparseable string for pg to report */
+  }
+  return url;
+}
+
+/**
  * Connects to Postgres, normally a Neon pooled connection string. Neon suspends idle compute on its free
  * plan, which drops connections. An idle client error must be handled or Node would crash on it, so it is
  * logged (the message never contains the password) and the pool opens a fresh connection on the next query.
  */
 export function connectPg(connectionString: string): Db {
   const pool = new pg.Pool({
-    connectionString,
+    connectionString: normalizePgUrl(connectionString),
     max: 4,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 15_000,

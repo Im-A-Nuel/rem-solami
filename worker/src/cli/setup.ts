@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { clusterOf, refreshPanicFile, setupAgent, type PanicFile } from "../nonce/index.js";
-import { loadKeypair } from "./keys.js";
+import { loadKeypair } from "../keys.js";
 import { fromUserDir } from "./paths.js";
 
 export const SETUP_USAGE = `Usage:
